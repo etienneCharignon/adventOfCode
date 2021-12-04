@@ -9,7 +9,7 @@ class BingoBoard:
         self.height = 0
 
     def addNumber(self, value):
-        self.data.append([self.x, self.y, value, 0])
+        self.data.append((self.x, self.y, value, 0))
         self.x += 1
 
     def addRow(self, row):
@@ -22,25 +22,27 @@ class BingoBoard:
         self.height = self.y
 
     def hasNumber(self, number):
-        for cell in [cell for cell in self.data if number == cell[2]]:
-            cell[3] = 1
+        def checkCell(cell):
+            x, y, v, s = cell
+            if (number == v):
+                return (x, y, v, 1)
+            else:
+                return (x, y, v, s)
+        self.data = list(map(checkCell, self.data))
 
     def hasRow(self):
-        for y in range(0, self.height):
-            wonRow = [cell for cell in self.data if cell[0] in range(0, self.width) and cell[1] == y and cell[3] == 1]
-            if(len(wonRow) == self.width):
+        for row in range(0, self.height):
+            wonCells = [v for (x, y, v, s) in self.data if x in range(0, self.width) and y == row and s == 1]
+            if(len(wonCells) == self.width):
                 return True
         return False
 
     def hasColumn(self):
-        for x in range(0, self.width):
-            wonCol = [cell for cell in self.data if cell[0] == x and cell[1] in range(0, self.height) and cell[3] == 1]
-            if(len(wonCol) == self.width):
+        for col in range(0, self.width):
+            wonCells = [v for (x, y, v, s) in self.data if x == col and y in range(0, self.height) and s == 1]
+            if(len(wonCells) == self.height):
                 return True
         return False
 
     def score(self):
-        score = 0
-        for cell in [cell for cell in self.data if cell[3] == 0]:
-            score += int(cell[2])
-        return score
+        return sum([int(v) for (x, y, v, s) in self.data if s == 0])
