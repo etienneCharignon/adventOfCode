@@ -3,7 +3,16 @@ from inputj5 import input
 from j5_hydrothermal_vent import direction
 
 
-diag = []
+diagram = {}
+
+
+def add(point, diagram):
+    if(point in diagram):
+        diagram[point] += 1
+    else:
+        diagram[point] = 1
+
+
 for row in input.split('\n'):
     # print(row)
     from_pos, to_pos = row.split(' -> ')
@@ -24,23 +33,15 @@ for row in input.split('\n'):
 
     if(fx == tx):
         for y in y_range:
-            diag.append((fx, y))
+            add((fx, y), diagram)
     elif(fy == ty):
         for x in x_range:
-            diag.append((x, fy))
+            add((x, fy), diagram)
     else:
         distance = len(x_range)
         for i in range(0, distance):
-            diag.append((fx + (i * x_dir), fy + (i * y_dir)))
+            add((fx + (i * x_dir), fy + (i * y_dir)), diagram)
 
-    # print(diag)
+    # print(diagram)
 
-# duplicates = {i:diag.count(i) for i in diag}
-
-unique_points = set(diag)
-print("unique points")
-for first in unique_points:
-    diag.remove(first)
-print("removed")
-
-print(len(set(diag)))
+print(len([point for point, nombre_occurences in diagram.items() if nombre_occurences > 1]))
