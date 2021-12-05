@@ -1,35 +1,46 @@
 from inputj5 import input
 # from samplej5 import input
+from j5_hydrothermal_vent import direction
+
 
 diag = []
 for row in input.split('\n'):
-    print(row)
+    # print(row)
     from_pos, to_pos = row.split(' -> ')
-    fxstr, fystr = from_pos.split(',')
-    txstr, tystr = to_pos.split(',')
-    fx = int(fxstr)
-    fy = int(fystr)
-    tx = int(txstr)
-    ty = int(tystr)
+    fx, fy = map(int, from_pos.split(','))
+    tx, ty = map(int, to_pos.split(','))
+
+    x_dir = direction(fx, tx)
+    y_dir = direction(fy, ty)
+    if(x_dir > 0):
+        x_range = range(fx, tx + 1, x_dir)
+    else:
+        x_range = range(fx, tx - 1, x_dir)
+
+    if(y_dir > 0):
+        y_range = range(fy, ty + 1, y_dir)
+    else:
+        y_range = range(fy, ty - 1, y_dir)
+
     if(fx == tx):
-        if(ty > fy):
-            y_range = range(fy, ty + 1)
-        else:
-            y_range = range(ty, fy + 1)
         for y in y_range:
             diag.append((fx, y))
-    if(fy == ty):
-        if(tx > fx):
-            x_range = range(fx, tx + 1)
-        else:
-            x_range = range(tx, fx + 1)
+    elif(fy == ty):
         for x in x_range:
             diag.append((x, fy))
+    else:
+        distance = len(x_range)
+        for i in range(0, distance):
+            diag.append((fx + (i * x_dir), fy + (i * y_dir)))
 
-print(len(diag) - len(set(diag)))
+    # print(diag)
+
+# duplicates = {i:diag.count(i) for i in diag}
 
 unique_points = set(diag)
+print("unique points")
 for first in unique_points:
     diag.remove(first)
+print("removed")
 
 print(len(set(diag)))
