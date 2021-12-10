@@ -18,20 +18,13 @@ SCORE_P2 = {
 }
 
 GOOD_PAIR = re.compile(r'\(\)|\[\]|{}|<>')
+OPPENING = re.compile(r'\(|{|\[|<')
 
 
-def remove_good_pair(line):
-    if GOOD_PAIR.search(line):
-        line = GOOD_PAIR.sub('', line)
-        return remove_good_pair(line)
-    return line
-
-
-def remove_oppening(line):
-    for signe in ['(', '{', '[', '<']:
-        if(signe in line):
-            line = line.replace(signe, '')
-            return remove_oppening(line)
+def remove(pattern, line):
+    if pattern.search(line):
+        line = pattern.sub('', line)
+        return remove(pattern, line)
     return line
 
 
@@ -44,7 +37,7 @@ def score_corruption(line):
 def total_score(input):
     score = 0
     for line in input.split('\n'):
-        cleared = remove_oppening(remove_good_pair(line))
+        cleared = remove(OPPENING, remove(GOOD_PAIR, line))
         score += score_corruption(cleared)
     return score
 
@@ -72,26 +65,26 @@ def score_completion(completion):
 def test_complete_lines():
     score = []
     for line in input.split('\n'):
-        cleared = remove_good_pair(line)
-        corrupted = remove_oppening(cleared)
+        cleared = remove(GOOD_PAIR, line)
+        corrupted = remove(OPPENING, cleared)
         if(len(corrupted) == 0):
             score.append(score_completion(complete(cleared)))
     assert calculate_median(sorted(score)) == 288957
 
 
 def test_find_corruption():
-    assert remove_good_pair('()') == ''
-    assert remove_good_pair('{()}') == ''
-    assert remove_good_pair('{([][])}') == ''
-    assert remove_good_pair('{}') == ''
-    assert remove_good_pair('{') == '{'
-    assert remove_good_pair('{<>') == '{'
-    assert remove_good_pair('()]') == ']'
+    assert remove(GOOD_PAIR, '()') == ''
+    assert remove(GOOD_PAIR, '{()}') == ''
+    assert remove(GOOD_PAIR, '{([][])}') == ''
+    assert remove(GOOD_PAIR, '{}') == ''
+    assert remove(GOOD_PAIR, '{') == '{'
+    assert remove(GOOD_PAIR, '{<>') == '{'
+    assert remove(GOOD_PAIR, '()]') == ']'
 
 
 def test_remove_oppening():
-    assert remove_oppening(remove_good_pair('[{[{({}]{}}([{[{{{}}([]')) == ']}'
-    assert remove_oppening(remove_good_pair('{([(<{}[<>[]}>{[]{[(<()>')) == '}>'
+    assert remove(OPPENING, remove(GOOD_PAIR, '[{[{({}]{}}([{[{{{}}([]')) == ']}'
+    assert remove(OPPENING, remove(GOOD_PAIR, '{([(<{}[<>[]}>{[]{[(<()>')) == '}>'
 
 
 def test_score_corruption():
