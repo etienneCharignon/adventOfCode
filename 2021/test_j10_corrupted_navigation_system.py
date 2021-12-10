@@ -1,3 +1,4 @@
+import re
 from samplej10 import input
 from inputj10 import rinput
 from j7 import calculate_median
@@ -16,12 +17,13 @@ SCORE_P2 = {
     '>': 4
 }
 
+GOOD_PAIR = re.compile(r'\(\)|\[\]|{}|<>')
+
 
 def remove_good_pair(line):
-    for pair in ['()', '{}', '[]', '<>']:
-        if(pair in line):
-            line = line.replace(pair, '')
-            return remove_good_pair(line)
+    if GOOD_PAIR.search(line):
+        line = GOOD_PAIR.sub('', line)
+        return remove_good_pair(line)
     return line
 
 
