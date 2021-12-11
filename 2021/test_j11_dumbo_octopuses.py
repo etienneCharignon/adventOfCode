@@ -1,3 +1,4 @@
+import re
 from samplej11 import all9_input, rinput
 
 
@@ -7,6 +8,16 @@ def parse(input):
     for row in rows:
         field.append(list(map(int, [energy for energy in row])))
     return field
+
+
+def print_zeros(field):
+    not_flash = re.compile("[1-9]")
+    flash = re.compile("0")
+
+    def joinCol(row):
+        return flash.sub('🐙', not_flash.sub(' ', ''.join(map(str, row))))
+
+    return '\n'.join(map(joinCol, field))
 
 
 def print_field(field):
@@ -86,6 +97,7 @@ def test_count_flash_input():
     for step in range(0, 100):
         field = increase(field)
         (field, flashes) = flash(field)
+        print_field(field)
         if(all_flashes(field)):
             assert step + 1 == 346
             return
