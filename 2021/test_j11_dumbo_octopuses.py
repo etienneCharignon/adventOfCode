@@ -56,10 +56,7 @@ def flash(field):
 
 
 def all_flashes(field):
-    def joinCol(row):
-        return sum(row)
-
-    return sum(map(joinCol, field)) == 0
+    return sum(map(sum, field)) == 0
 
 
 def test_parse_input():
