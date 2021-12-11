@@ -23,6 +23,16 @@ def increase(field):
     return field
 
 
+def flash_it(row, col, field):
+    count = 0
+    if(field[row][col] > 9):
+        field[row][col] = 0
+        count += 1
+        (field, around_count) = flash_around(row, col, field)
+        count += around_count
+    return (field, count)
+
+
 def flash_around(row, col, field):
     count = 0
     for r in range(row - 1, row + 2):
@@ -31,11 +41,8 @@ def flash_around(row, col, field):
                 continue
             if(field[r][c] != 0):
                 field[r][c] += 1
-                if(field[r][c] > 9):
-                    field[r][c] = 0
-                    count += 1
-                    (field, around_count) = flash_around(r, c, field)
-                    count += around_count
+                field, flashes = flash_it(r, c, field)
+                count += flashes
     return (field, count)
 
 
@@ -43,11 +50,8 @@ def flash(field):
     count = 0
     for row in range(0, len(field)):
         for col in range(0, len(field[row])):
-            if(field[row][col] > 9):
-                field[row][col] = 0
-                count += 1
-                (field, around_count) = flash_around(row, col, field)
-                count += around_count
+            field, flashes = flash_it(row, col, field)
+            count += flashes
     return (field, count)
 
 
@@ -85,7 +89,7 @@ def test_flash():
 def test_count_flash_input():
     field = parse(rinput)
     count = 0
-    for step in range(0, 1000):
+    for step in range(0, 100):
         field = increase(field)
         (field, flashes) = flash(field)
         if(all_flashes(field)):
