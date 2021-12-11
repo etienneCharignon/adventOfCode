@@ -51,6 +51,13 @@ def flash(field):
     return (field, count)
 
 
+def all_flashes(field):
+    def joinCol(row):
+        return sum(row)
+
+    return sum(map(joinCol, field)) == 0
+
+
 def test_parse_input():
     assert parse(all9_input) == [[1, 1, 1, 1, 1], [1, 9, 9, 9, 1], [1, 9, 1, 9, 1], [1, 9, 9, 9, 1], [1, 1, 1, 1, 1]]
     assert print_field([[1, 2], [3, 4]]) == "12\n34"
@@ -78,8 +85,11 @@ def test_flash():
 def test_count_flash_input():
     field = parse(rinput)
     count = 0
-    for step in range(0, 100):
+    for step in range(0, 1000):
         field = increase(field)
         (field, flashes) = flash(field)
+        if(all_flashes(field)):
+            assert step + 1 == 346
+            return
         count += flashes
-    assert count == 1656
+    assert count == 1694
