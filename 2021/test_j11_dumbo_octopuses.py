@@ -28,9 +28,8 @@ def flash_it(row, col, field):
     if(field[row][col] > 9):
         field[row][col] = 0
         count += 1
-        (field, around_count) = flash_around(row, col, field)
-        count += around_count
-    return (field, count)
+        count += flash_around(row, col, field)
+    return count
 
 
 def flash_around(row, col, field):
@@ -41,17 +40,15 @@ def flash_around(row, col, field):
                 continue
             if(field[r][c] != 0):
                 field[r][c] += 1
-                field, flashes = flash_it(r, c, field)
-                count += flashes
-    return (field, count)
+                count += flash_it(r, c, field)
+    return count
 
 
 def flash(field):
     count = 0
     for row in range(0, len(field)):
         for col in range(0, len(field[row])):
-            field, flashes = flash_it(row, col, field)
-            count += flashes
+            count += flash_it(row, col, field)
     return (field, count)
 
 
