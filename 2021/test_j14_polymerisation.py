@@ -128,8 +128,7 @@ def test_step():
     counters, pairs = step(40, init(template), rules, counters)
     print(counters)
     counts = sorted(counters.values())
-    print(counts[-1] - counts[0])
-    assert counts[-1] - counts[0] == 1588
+    assert counts[-1] - counts[0] == 3015383850689
 
 
 # test_run_ten_step()
