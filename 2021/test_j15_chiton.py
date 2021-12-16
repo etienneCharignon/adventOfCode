@@ -1,5 +1,5 @@
-from inputj15 import sample_input, input
-from j15_chiton import compute_lower_risk, find_path, parse_input
+from inputj15 import sample_input  # , input
+from j15_chiton import compute_lower_risk_slow, compute_lower_risk, find_path, parse_input
 
 
 def test_parse_input():
@@ -28,6 +28,5 @@ def test_find_path():
 
 
 def test_find_lowest_risk():
-    print('START')
-    assert compute_lower_risk(input) == 41
+    assert compute_lower_risk_slow(sample_input) == 41
     assert compute_lower_risk(sample_input) == 41

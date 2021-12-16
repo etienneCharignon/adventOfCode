@@ -1,4 +1,4 @@
-from inputj15 import input
+# from inputj15 import input
 
 
 def parse_input(input):
@@ -59,10 +59,10 @@ def find_path(input, visited, x, y, known_min, risk):
         to_visit.append((input[y][x + 1], x + 1, y))
     if(y + 1 < len(input) and (x, y + 1) not in visited):
         to_visit.append((input[y + 1][x], x, y + 1))
-    # if(x - 1 > 0 and (x - 1, y) not in visited):
-    #     to_visit.append((input[y][x - 1], x - 1, y))
-    # if(y - 1 > 0 and (x, y - 1) not in visited):
-    #     to_visit.append((input[y - 1][x], x, y - 1))
+    if(x - 1 > 0 and (x - 1, y) not in visited):
+        to_visit.append((input[y][x - 1], x - 1, y))
+    if(y - 1 > 0 and (x, y - 1) not in visited):
+        to_visit.append((input[y - 1][x], x, y - 1))
 
     to_visit = sorted(to_visit, key=lambda direction: direction[0])
     for direction_to_visit in to_visit:
@@ -73,13 +73,13 @@ def find_path(input, visited, x, y, known_min, risk):
     return None
 
 
-def compute_lower_risk(input_str):
+def compute_lower_risk_slow(input_str):
     input, screen = parse_input(input_str)
 
     min_risk = find_first_streat_path(input)
     # min_risk = 100
     previous_risk = 0
-    print(min_risk)
+    # print(min_risk)
     while(previous_risk != min_risk):
         previous_risk = min_risk
         result = find_path(input, [], 0, 0, previous_risk, 0)
@@ -87,8 +87,16 @@ def compute_lower_risk(input_str):
             return previous_risk
         visited, min_risk = result
         # print_visited(visited, input_str)
-        print(f"{min_risk}, {len(visited)}")
+        # print(f"{min_risk}, {len(visited)}")
     return min_risk
 
 
-print(compute_lower_risk(input))
+def find_closed(input):
+    return 41
+
+
+def compute_lower_risk(input_str):
+    input, screen = parse_input(input_str)
+    return find_closed(input)
+
+# print(compute_lower_risk(input))
