@@ -86,3 +86,13 @@ def reduce(n):
         if(not exploded):
             splited, n = split(n)
     return n
+
+
+def magns(homework):
+    magns = []
+    for number in homework:
+        for other_number in homework:
+            if(number != other_number):
+                magns.append(magnitude(sum_number(number, other_number)))
+
+    return magns

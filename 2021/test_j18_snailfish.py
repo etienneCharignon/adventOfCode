@@ -1,5 +1,5 @@
-from j18_snailfish import sum_number, explode, reduce, split, sum_list, magnitude
-from inputj18 import sample_input, input
+from j18_snailfish import sum_number, explode, reduce, split, sum_list, magnitude, magns
+from inputj18 import sample_input, input, sample_input2
 
 
 def test_explod():
@@ -69,3 +69,8 @@ def test_sum_list():
         [[[3, 0], [5, 3]], [4, 4]], [5, 5]
     ]
     assert sum_list(sample_input) == [[[[8, 7], [7, 7]], [[8, 6], [7, 7]]], [[[0, 7], [6, 6]], [8, 7]]]
+
+
+def test_find_max_magnitude():
+    assert max(magns(sample_input2)) == 3993
+    # assert max(magns(input)) == 4638
