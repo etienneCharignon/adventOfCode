@@ -1,5 +1,5 @@
-sample_positions = [3, 7]
-input = [2, 3]
+sample_positions = (3, 7)
+input = (2, 3)
 
 
 def roll_player(dice, scores, positions, player):
@@ -34,8 +34,8 @@ def test_roll_player():
 
 
 def test_roll_game():
-    assert roll_game(sample_positions) == 739785
-    assert roll_game(input) == 995904
+    assert roll_game(list(sample_positions)) == 739785
+    assert roll_game(list(input)) == 995904
 
 
 def compute_all_possible_dice_run():
@@ -44,6 +44,8 @@ def compute_all_possible_dice_run():
         for dice2 in range(1, 4):
             for dice3 in range(1, 4):
                 dices = dice1 + dice2 + dice3
+                # if(dices == 6):
+                #     print(f"{dice1} + {dice2} + {dice3} = {dices}")
                 if(dices in runs):
                     runs[dices] += 1
                 else:
@@ -130,21 +132,16 @@ def roll_quantum(positions):
     dice_runs = compute_all_possible_dice_run()
     while(len(universes) != 2):
         universes = run_dice_player(0, dice_runs, universes)
-        print(f"different : {len(universes)}, total : {sum(universes.values())}")
         if(len(universes) != 2):
             universes = run_dice_player(1, dice_runs, universes)
-            print(f"different : {len(universes)}, total : {sum(universes.values())}")
 
     print(universes)
     return universes.values()
 
 
 def test_roll_quantum():
-    assert roll_quantum(tuple(sample_positions)) == [444356092776315, 341960390180808]
-# 93726416205179
-# 49950658789496
-# 444356092776315
-# 341960390180808
+    assert list(roll_quantum(sample_positions)) == [444356092776315, 341960390180808]
+    assert list(roll_quantum(input)) == [193753136998081, 128102093757446]
 
 
-# print(roll_quantum(tuple(sample_positions)))
+# print(roll_quantum(input))
