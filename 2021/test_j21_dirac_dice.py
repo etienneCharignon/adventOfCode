@@ -1,5 +1,3 @@
-import numpy
-
 sample_positions = [3, 7]
 input = [2, 3]
 
@@ -67,13 +65,13 @@ def test_compute_all_posible_dice_run():
 
 def play_dice(player, dice, dice_combination, u, count, new_universes):
     scores, positions = u
-    scores = numpy.asarray(scores)
-    positions = numpy.asarray(positions)
+    scores = list(scores)
+    positions = list(positions)
     positions[player] = (positions[player] + dice) % 10
     scores[player] += positions[player] + 1
     if(scores[player] >= 21):
         scores[player] = 21
-        scores[player - 1] = 0
+        scores[1 - player] = 0
         positions = [0, 0]
     new_univers = (tuple(scores), tuple(positions))
     if(new_univers in new_universes):
