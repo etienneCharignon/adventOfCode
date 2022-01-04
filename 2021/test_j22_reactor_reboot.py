@@ -1,5 +1,4 @@
-from inputj22 import example_input
-from j12_cuboid import LightedCuboid, intersection, is_empty
+# from inputj22 import example_input
 
 
 def read_coordinate(string):
@@ -18,85 +17,66 @@ def test_read_input():
     assert read_line('on x=1..2,y=3..4,z=5..6') == (True, (1, 2), (3, 4), (5, 6))
 
 
+def length(axe):
+    return axe[1] - axe[0] + 1
+
+
+def volume(cuboid):
+    x, y, z = cuboid
+    return length(x) * length(y) * length(z)
+
+
 def count_cubes(cuboids):
     count = 0
     for cuboid in cuboids:
-        count += LightedCuboid(cuboid).volume()
+        count += volume(cuboid)
     return count
 
 
-def test_is_empty():
-    assert is_empty(((1, 0), (1, 2), (1, 2)))
-    assert is_empty(((1, 2), (1, 0), (1, 2)))
-    assert is_empty(((1, 2), (1, 2), (1, 0)))
-    assert not is_empty(((1, 2), (1, 2), (1, 1)))
+def computes_new_cuboids(x, y, z, world):
+    new_cuboids = []
+    for cuboid in world:
+        if(x[1] > cuboid[0][1]):
+            new_x = (cuboid[0][1] + 1, x[1])
+            new_cuboids.append((new_x, y, z))
+        if(x[0] < cuboid[0][0]):
+            new_x = (x[0], cuboid[0][0] - 1)
+            new_cuboids.append((new_x, y, z))
+        if(y[1] > cuboid[1][1]):
+            new_y = (cuboid[1][1] + 1, y[1])
+            new_cuboids.append((cuboid[0], new_y, z))
+
+    if(len(new_cuboids) == 0):
+        new_cuboids.append((x, y, z))
+
+    return new_cuboids
 
 
-def generate_world(lines):
-    lighted = []
-    to_remove = []
+def generate_cuboid(lines):
+    world = []
     for line in lines:
         on, x, y, z = read_line(line)
-        if(on):
-            for cuboid in lighted:
-                intersection_cuboid = intersection((x, y, z), cuboid)
-                if(not is_empty(intersection_cuboid)):
-                    to_remove.append(intersection_cuboid)
-            lighted.append((x, y, z))
-        else:
-            for cuboid in lighted:
-                intersection_cuboid = intersection((x, y, z), cuboid)
-                if(not is_empty(intersection_cuboid)):
-                    to_remove.append(intersection_cuboid)
-                    break
+        new_cuboids = computes_new_cuboids(x, y, z, world)
+        world += new_cuboids
 
-    return (lighted, to_remove)
+    return world
 
 
 def test_generate_cuboid():
-    assert generate_world(['on x=10..12,y=10..12,z=10..12']) == ([((10, 12), (10, 12), (10, 12))], [])
-    assert generate_world(['on x=10..12,y=10..12,z=10..12', 'on x=9..13,y=10..13,z=10..12']) == ([
+    assert generate_cuboid(['on x=10..12,y=10..12,z=10..12']) == [((10, 12), (10, 12), (10, 12))]
+    assert generate_cuboid(['on x=10..12,y=10..12,z=10..12', 'on x=9..13,y=10..13,z=10..12']) == [
         ((10, 12), (10, 12), (10, 12)),
-        ((9, 13), (10, 13), (10, 12))
-    ],
-        [((10, 12), (10, 12), (10, 12))]
-    )
-    assert generate_world(['on x=10..12,y=10..12,z=10..12',
-                           'on x=11..13,y=11..13,z=11..13',
-                           'on x=10..10,y=10..10,z=10..10']) == ([
-                               ((10, 12), (10, 12), (10, 12)),
-                               ((11, 13), (11, 13), (11, 13)),
-                               ((10, 10), (10, 10), (10, 10))
-                           ], [
-                               ((11, 12), (11, 12), (11, 12)),
-                               ((10, 10), (10, 10), (10, 10))
-                           ])
+        ((13, 13), (10, 13), (10, 12)),
+        ((9, 9), (10, 13), (10, 12)),
+        ((10, 12), (13, 13), (10, 12))
+    ]
 
 
-def test_generate_cuboid_turn_off_ligths():
-    assert generate_world(['on x=10..12,y=10..12,z=10..12',
-                           'on x=11..13,y=11..13,z=11..13',
-                           'off x=9..11,y=9..11,z=9..11']) == ([
-                               ((10, 12), (10, 12), (10, 12)),
-                               ((11, 13), (11, 13), (11, 13)),
-                           ], [
-                               ((11, 12), (11, 12), (11, 12)),
-                               ((10, 11), (10, 11), (10, 11)),
-                           ])
-    assert generate_world(['off x=9..11,y=9..11,z=9..11']) == ([], [])
+def test_compute_new_cuboids():
+    assert computes_new_cuboids((15, 16), (10, 12), (10, 12), [((10, 12), (10, 12), (10, 12))]) == [
+        ((15, 16), (10, 12), (10, 12))
+    ]
 
 
-def solve(input):
-    world = generate_world(input.split('\n'))
-    return count_cubes(world[0]) - count_cubes(world[1])
-
-
-def xtest_solve():
-    assert solve(example_input) == 39
-
-
-def test_cuboid():
-    cuboid = LightedCuboid(((10, 12), (10, 12), (10, 12)))
-    assert cuboid.lighted() == 3 * 3 * 3
-    cuboid.remove(((12, 13), (10, 13), (10, 12)))
-    assert cuboid.lighted() == 19
+def test_count_cubes():
+    assert count_cubes([((10, 12), (10, 12), (10, 12))]) == 27
