@@ -1,5 +1,7 @@
 # from inputj22 import example_input
 
+space = [[[False]*50]*50]*50
+
 
 def read_coordinate(string):
     axe, coordinate = string.split('=')
@@ -72,10 +74,18 @@ def test_generate_cuboid():
     ]
 
 
-def test_compute_new_cuboids():
+def xtest_compute_new_cuboids():
     assert computes_new_cuboids((15, 16), (10, 12), (10, 12), [((10, 12), (10, 12), (10, 12))]) == [
         ((15, 16), (10, 12), (10, 12))
     ]
+
+
+def set_space(cuboid):
+    None
+
+
+def test_set_space():
+    assert set_space(((10, 12), (10, 12), (10, 12)))[10][10][10]
 
 
 def test_count_cubes():
