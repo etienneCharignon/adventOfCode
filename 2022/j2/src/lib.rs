@@ -2507,10 +2507,26 @@ A X";
 
 pub fn find_score_shape(shape: char) -> i32 {
     match shape {
-        'X' => 1,
-        'Y' => 2,
-        'Z' => 3,
+        'A' => 1,
+        'B' => 2,
+        'C' => 3,
         _ => 0,
+    }
+}
+
+pub fn find_loose(shape: char) -> char {
+    match shape {
+        'A' => 'C',
+        'B' => 'A',
+        _ => 'B',
+    }
+}
+
+pub fn find_win(shape: char) -> char {
+    match shape {
+        'A' => 'B',
+        'B' => 'C',
+        _ => 'A',
     }
 }
 
@@ -2519,12 +2535,12 @@ pub fn find_score_shape(shape: char) -> i32 {
 
 pub fn find_score_winner(shape: &str) -> i32 {
     match shape {
-        "C X"=> 6,
-        "A Y"=> 6,
-        "B Z"=> 6,
-        "A X"=> 3,
-        "B Y"=> 3,
-        "C Z"=> 3,
+        "C A"=> 6,
+        "A B"=> 6,
+        "B C"=> 6,
+        "A A"=> 3,
+        "B B"=> 3,
+        "C C"=> 3,
         _ => 0,
     }
 }
@@ -2538,7 +2554,8 @@ mod tests {
     }
 
     fn score(pair: &str) -> i32 {
-        find_score_shape(pair.chars().nth(2).unwrap()) + find_score_winner(pair)
+        let play:&str = &choose_play(pair)[..];
+        find_score_shape(play.chars().nth(2).unwrap()) + find_score_winner(play)
     }
 
     fn total_score(strategy: &str) -> i32 {
@@ -2546,6 +2563,24 @@ mod tests {
         split.into_iter().map(|pair| score(pair)).sum()
     }
 
+    fn choose_play(pair: &str) -> String {
+        let mut chars = pair.chars();
+        match chars.nth(2).unwrap() {
+            'Y' => {
+                let elf_play = pair.chars().nth(0).unwrap();
+                format!("{} {}", elf_play, elf_play)
+            },
+            'X' => {
+                let elf_play = pair.chars().nth(0).unwrap();
+                format!("{} {}", elf_play, find_loose(elf_play))
+            },
+            'Z' => {
+                let elf_play = pair.chars().nth(0).unwrap();
+                format!("{} {}", elf_play, find_win(elf_play))
+            },
+            _ => "".to_string(),
+        }
+    }
 
     #[test]
     fn test_splitvec() {
@@ -2553,16 +2588,23 @@ mod tests {
         assert_eq!(split[0], "A Y");
     }
 
+    #[test]
+    fn test_choose_play() {
+        assert_eq!(choose_play("A Y"), "A A");
+        assert_eq!(choose_play("B X"), "B A");
+        assert_eq!(choose_play("C Z"), "C A");
+    }
 
     #[test]
     fn test_score() {
-        assert_eq!(score("A Y"), 8);
+        assert_eq!(score("A Y"), 4);
         assert_eq!(score("B X"), 1);
+        assert_eq!(score("C Z"), 7);
     }
 
     #[test]
     fn test_total_score() {
-        assert_eq!(total_score(EXAMPLE), 15);
-        assert_eq!(total_score(INPUT), 9177);
+        assert_eq!(total_score(EXAMPLE), 12);
+        assert_eq!(total_score(INPUT), 12111);
     }
 }
