@@ -331,13 +331,32 @@ mod tests {
         panic!("no item found")
     }
 
+    fn find_badge(rucksacks: &[&str]) -> char {
+        for c in rucksacks[0].chars() {
+            if rucksacks[1].contains(c) && rucksacks[2].contains(c) {
+                return c;
+            }
+        }
+        panic!("no item found")
+    }
+
     fn priority(item: char) -> u32 {
         let code = item as u8;
         if code > 96 { (code - 96).into() } else { (code - 64 + 26).into() }
     }
 
-    fn solve(rucksacks: &str) -> u32 {
-        rucksacks.lines().map(|rucksack| priority(find_item(split_in_compartments(rucksack)))).sum()
+    fn solve_p1(rucksacks: &str) -> u32 {
+        rucksacks.lines()
+                 .map(|rucksack| priority(find_item(split_in_compartments(rucksack))))
+                 .sum()
+    }
+
+    fn solve_p2(rucksacks: &str) -> u32 {
+        rucksacks.lines()
+                 .collect::<Vec<&str>>()
+                 .chunks(3)
+                 .map(|rucksacks| priority(find_badge(rucksacks)))
+                 .sum()
     }
 
     #[test]
@@ -357,8 +376,23 @@ mod tests {
     }
 
     #[test]
-    fn it_solve() {
-        assert_eq!(solve(EXAMPLE), 157);
-        assert_eq!(solve(INPUT), 8072);
+    fn it_solve_p1() {
+        assert_eq!(solve_p1(EXAMPLE), 157);
+        assert_eq!(solve_p1(INPUT), 8072);
+    }
+
+    #[test]
+    fn it_find_badge() {
+        assert_eq!(find_badge(&[
+            "vJrwpWtwJgWrhcsFMMfFFhFp",
+            "JqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL",
+            "PmmdzqPrVvPwwTWBwg"
+        ]), 'r');
+    }
+
+    #[test]
+    fn it_solve_p2() {
+        assert_eq!(solve_p2(EXAMPLE), 70);
+        assert_eq!(solve_p2(INPUT), 2567);
     }
 }
