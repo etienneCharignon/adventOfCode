@@ -2549,18 +2549,13 @@ pub fn find_score_winner(shape: &str) -> i32 {
 mod tests {
     use super::*;
 
-    fn splitvec(s: &str, separator: char) -> Vec<&str> {
-        s.split(separator).collect::<Vec<&str>>()
-    }
-
     fn score(pair: &str) -> i32 {
         let play:&str = &choose_play(pair)[..];
         find_score_shape(play.chars().nth(2).unwrap()) + find_score_winner(play)
     }
 
     fn total_score(strategy: &str) -> i32 {
-        let split = splitvec(strategy, '\n');
-        split.into_iter().map(|pair| score(pair)).sum()
+        strategy.lines().map(|pair| score(pair)).sum()
     }
 
     fn choose_play(pair: &str) -> String {
@@ -2580,12 +2575,6 @@ mod tests {
             },
             _ => "".to_string(),
         }
-    }
-
-    #[test]
-    fn test_splitvec() {
-        let split = splitvec(EXAMPLE, '\n');
-        assert_eq!(split[0], "A Y");
     }
 
     #[test]
