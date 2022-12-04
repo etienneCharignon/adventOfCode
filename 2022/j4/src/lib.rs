@@ -1025,10 +1025,14 @@ mod tests {
         assignments[0][0] <= assignments[1][0] && assignments[0][1] >= assignments[1][1]
     }
 
+    fn do_not_overlap(assignments: Vec<Vec<i32>>) -> bool {
+        assignments[0][1] < assignments[1][0] || assignments[1][1] < assignments[0][0]
+    }
+
     fn count_overlapped(pair_assignments: &str) -> i32 {
         pair_assignments.lines()
                         .map(|assignments| read_line(assignments))
-                        .map(|assignments| if overlap(assignments) {1} else {0})
+                        .map(|assignments| if do_not_overlap(assignments) {0} else {1})
                         .sum()
     }
 
@@ -1039,7 +1043,7 @@ mod tests {
 
     #[test]
     fn it_count_overlapped() {
-        assert_eq!(count_overlapped(EXAMPLE), 2);
-        assert_eq!(count_overlapped(INPUT), 588);
+        assert_eq!(count_overlapped(EXAMPLE), 4);
+        assert_eq!(count_overlapped(INPUT), 911);
     }
 }
