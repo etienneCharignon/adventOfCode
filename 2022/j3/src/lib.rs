@@ -340,18 +340,23 @@ mod tests {
         panic!("no item found")
     }
 
-    fn priority(item: char) -> u32 {
-        let code = item as u8;
-        if code > 96 { (code - 96).into() } else { (code - 64 + 26).into() }
+    fn priority(item: char) -> usize {
+        ('a'..='z').chain('A'..='Z').position(|c| c == item).unwrap() + 1
+        // " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".find(item).unwrap()
+        // String::from_utf8(
+        //     (b'a'..=b'z').chain(b'A'..=b'Z').collect()
+        // ).unwrap().find(item).unwrap() + 1
+        // let code = item as u16;
+        // if code > 96 { code - 96 } else { code - 64 + 26 }
     }
 
-    fn solve_p1(rucksacks: &str) -> u32 {
+    fn solve_p1(rucksacks: &str) -> usize {
         rucksacks.lines()
                  .map(|rucksack| priority(find_item(split_in_compartments(rucksack))))
                  .sum()
     }
 
-    fn solve_p2(rucksacks: &str) -> u32 {
+    fn solve_p2(rucksacks: &str) -> usize {
         rucksacks.lines()
                  .collect::<Vec<&str>>()
                  .chunks(3)
