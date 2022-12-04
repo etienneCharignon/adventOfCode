@@ -4,20 +4,20 @@ mod inputs;
 mod tests {
     use super::*;
 
-    fn read_line(line: &str) -> Vec<Vec<i32>> {
+    fn read_line(line: &str) -> Vec<Vec<u8>> {
         line.split(',')
             .map(|assignment| assignment.split('-')
-                                        .map(|id| id.parse::<i32>().unwrap())
+                                        .map(|id| id.parse::<u8>().unwrap())
                                         .collect())
             .collect() 
     }
 
-    fn overlap(assignments: Vec<Vec<i32>>) -> bool {
+    fn full_overlap(assignments: Vec<Vec<u8>>) -> bool {
         assignments[0][0] >= assignments[1][0] && assignments[0][1] <= assignments[1][1] ||
         assignments[0][0] <= assignments[1][0] && assignments[0][1] >= assignments[1][1]
     }
 
-    fn do_not_overlap(assignments: Vec<Vec<i32>>) -> bool {
+    fn do_not_overlap(assignments: Vec<Vec<u8>>) -> bool {
         assignments[0][1] < assignments[1][0] || assignments[1][1] < assignments[0][0]
     }
 
