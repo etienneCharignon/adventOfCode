@@ -17,14 +17,14 @@ mod tests {
         assignments[0][0] <= assignments[1][0] && assignments[0][1] >= assignments[1][1]
     }
 
-    fn do_not_overlap(assignments: &Vec<Vec<u8>>) -> bool {
-        assignments[0][1] < assignments[1][0] || assignments[1][1] < assignments[0][0]
+    fn overlap(assignments: &Vec<Vec<u8>>) -> bool {
+        !(assignments[0][1] < assignments[1][0] || assignments[1][1] < assignments[0][0])
     }
 
     fn count_overlapped(pair_assignments: &str) -> usize {
         pair_assignments.lines()
                         .map(|assignments| read_line(assignments))
-                        .filter(|assignments| ! do_not_overlap(assignments))
+                        .filter(|assignments| overlap(assignments))
                         .count()
     }
 
