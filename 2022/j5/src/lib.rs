@@ -27,10 +27,15 @@ mod tests {
                 let nth = words[1].parse::<usize>().unwrap();
                 let from = words[3].parse::<usize>().unwrap() - 1;
                 let to = words[5].parse::<usize>().unwrap() - 1;
-                (0..nth).for_each(|_i| {
-                    let c = crates[from].pop().unwrap();
-                    crates[to].push(c);
-                })
+                (0..nth).map(|_i| {
+                            crates[from].pop().unwrap()
+                        })
+                        .collect::<Vec<char>>()
+                        .iter()
+                        .rev()
+                        .for_each(|&c| {
+                            crates[to].push(c);
+                        });
              });
         crates
     }
@@ -48,11 +53,12 @@ mod tests {
 
     #[test]
     fn it_moves() {
-        assert_eq!(moves(read_crates(inputs::EXAMPLE_CRATES, 3), inputs::EXAMPLE_MOVES), vec!(vec!('C'), vec!('M'), vec!('P', 'D', 'N', 'Z')));
+        assert_eq!(moves(read_crates(inputs::EXAMPLE_CRATES, 3), inputs::EXAMPLE_MOVES),
+                   vec!(vec!('M'), vec!('C'), vec!('P', 'Z', 'N', 'D')));
     }
 
     #[test]
     fn it_solve() {
-        assert_eq!(solve(moves(read_crates(inputs::CRATES, 9), inputs::MOVES)), "PSNRGBTFT");
+        assert_eq!(solve(moves(read_crates(inputs::CRATES, 9), inputs::MOVES)), "BNTZFPMMW");
     }
 }
