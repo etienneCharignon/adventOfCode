@@ -1,38 +1,37 @@
 use itertools::Itertools;
 mod inputs;
 
-const LEN: usize = 14;
+
+fn all_unique(candidate: &str) -> bool {
+    candidate.chars().unique().count() == candidate.len()
+}
+
+pub fn detect_first_of_size(buffer: &str, size: usize) -> (&str, usize) {
+    for (i, _) in buffer.chars().enumerate() {
+        let candidate = &buffer[i..i + size];
+        if all_unique(candidate) {
+            return (candidate, i + candidate.len())
+        }
+    }
+    panic!("not found");
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn all_unique(candidate: &str) -> bool {
-        candidate.chars().unique().count() == LEN
-    }
 
-    fn first_start(buffer: &str) -> (&str, usize) {
-        for (i, _) in buffer.chars().enumerate() {
-            let candidate = &buffer[i..i + LEN];
-            if all_unique(candidate) {
-                return (candidate, i + LEN)
-            }
-        }
-        //     if start.contains(&c) {
-        //         start = Vec::new();
-        //     }
-        //     start.push(c);
-        //     if start.len() == 4 {
-        //         return (start, i + 1)
-        //     }
-        // }
-        panic!("start not found");
+    #[test]
+    fn it_solve_part_1() {
+        assert_eq!(detect_first_of_size("mjqjpqmgbljsphdztnvjfqwrcgsmlb", 4), ("jpqm", 7));
+        assert_eq!(detect_first_of_size("bvwbjplbgvbhsrlpgdmjqwftvncz", 4), ("vwbj", 5));
+        assert_eq!(detect_first_of_size(inputs::INPUT, 4), ("bdjq", 1578));
     }
 
     #[test]
-    fn it_detect_first_start() {
-        assert_eq!(first_start("mjqjpqmgbljsphdztnvjfqwrcgsmlb"), ("qmgbljsphdztnv", 19));
-        assert_eq!(first_start("bvwbjplbgvbhsrlpgdmjqwftvncz"), ("vbhsrlpgdmjqwf", 23));
-        assert_eq!(first_start(inputs::INPUT), ("mdcbnwqgshpvfj", 2178));
+    fn it_solve_part_2() {
+        assert_eq!(detect_first_of_size("mjqjpqmgbljsphdztnvjfqwrcgsmlb", 14), ("qmgbljsphdztnv", 19));
+        assert_eq!(detect_first_of_size("bvwbjplbgvbhsrlpgdmjqwftvncz", 14), ("vbhsrlpgdmjqwf", 23));
+        assert_eq!(detect_first_of_size(inputs::INPUT, 14), ("mdcbnwqgshpvfj", 2178));
     }
 }
