@@ -1,3 +1,5 @@
+use regex::Regex;
+
 mod inputs;
 
 #[cfg(test)]
@@ -23,10 +25,13 @@ mod tests {
     fn moves(mut crates: Vec<Vec<char>>, moves: &str) -> Vec<Vec<char>>  {
         moves.lines()
              .for_each(|line| {
-                let words:Vec<&str> = line.split(' ').collect();
-                let nth = words[1].parse::<usize>().unwrap();
-                let from = words[3].parse::<usize>().unwrap() - 1;
-                let to = words[5].parse::<usize>().unwrap() - 1;
+                let numbers = Regex::new(r"\d+").unwrap()
+                                                .captures_iter(line)
+                                                .map(|cap| cap.get(0).unwrap().parse::<usize>().unwrap())
+                                                .collect();
+                let nth = numbers[0];
+                let from = numbers[1];
+                let to = numbers[2];
                 (0..nth).map(|_i| {
                             crates[from].pop().unwrap()
                         })
