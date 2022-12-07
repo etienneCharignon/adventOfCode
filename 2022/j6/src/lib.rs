@@ -7,10 +7,10 @@ fn all_unique(candidate: &str) -> bool {
 }
 
 pub fn detect_first_of_size(buffer: &str, size: usize) -> (&str, usize) {
-    for (i, _) in buffer.chars().enumerate() {
-        let candidate = &buffer[i..i + size];
+    for i in size..buffer.len() {
+        let candidate = &buffer[i - size..i];
         if all_unique(candidate) {
-            return (candidate, i + candidate.len())
+            return (candidate, i)
         }
     }
     panic!("not found");
