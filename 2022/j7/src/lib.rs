@@ -97,13 +97,39 @@ $ ls
     #[test]
     fn it_read_example() {
         let mut directories: HashMap<String, usize> = HashMap::new();
-        read_directory(&(inputs::INPUT.lines().collect()), 0, &mut directories, &String::new());
-        let mut sum = 0;
+        read_directory(&(inputs::EXAMPLE.lines().collect()), 0, &mut directories, &String::new());
+        let total: u32 = *directories.get("/").unwrap() as u32;
+        assert_eq!(total, 48381165);
+        let wanted: u32 = 30000000;
+        let unused: u32 = 70000000 - total;
+        assert_eq!(unused, 21618835);
+        let needed: u32 = wanted - unused;
+        assert_eq!(needed, 8381165);
+        let mut min: u32 = std::u32::MAX;
         for value in directories.values() {
-            if *value < 100000 {
-                sum += value
+            let value32 = *value as u32; 
+            if value32 >= needed && value32 < min {
+                min = value32;
             }
         }
-        assert_eq!(sum, 1350966);
+        assert_eq!(min, 24933642);
+    }
+
+    #[test]
+    fn it_read_input() {
+        let mut directories: HashMap<String, usize> = HashMap::new();
+        read_directory(&(inputs::INPUT.lines().collect()), 0, &mut directories, &String::new());
+        let total: u32 = *directories.get("/").unwrap() as u32;
+        let wanted: u32 = 30000000;
+        let unused: u32 = 70000000 - total;
+        let needed: u32 = wanted - unused;
+        let mut min: u32 = std::u32::MAX;
+        for value in directories.values() {
+            let value32 = *value as u32; 
+            if value32 >= needed && value32 < min {
+                min = value32;
+            }
+        }
+        assert_eq!(min, 6296435);
     }
 }
