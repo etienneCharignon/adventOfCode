@@ -11,35 +11,23 @@ fn parse_input(input: &str) -> Vec<Vec<usize>> {
 }
 
 fn is_visible_left(forest: &Vec<Vec<usize>>, r: usize, c: usize) -> bool {
-    let mut visible = true;
-    for i in 0..c {
-        visible = visible && forest[r][i] < forest[r][c];
-    }
-    visible
+    (0..c).map(|i| forest[r][i])
+          .all(|cell| cell < forest[r][c])
 }
 
 fn is_visible_right(forest: &Vec<Vec<usize>>, r: usize, c: usize) -> bool {
-    let mut visible = true;
-    for i in c+1..forest[r].len() {
-        visible = visible && forest[r][i] < forest[r][c];
-    }
-    visible
+    (c+1..forest[r].len()).map(|i| forest[r][i])
+                          .all(|cell| cell < forest[r][c])
 }
 
 fn is_visible_up(forest: &Vec<Vec<usize>>, r: usize, c: usize) -> bool {
-    let mut visible = true;
-    for i in 0..r {
-        visible = visible && forest[i][c] < forest[r][c]
-    }
-    visible
+    (0..r).map(|i| forest[i][c])
+          .all(|cell| cell < forest[r][c])
 }
 
 fn is_visible_down(forest: &Vec<Vec<usize>>, r: usize, c: usize) -> bool {
-    let mut visible = true;
-    for i in r+1..forest.len() {
-        visible = visible && forest[i][c] < forest[r][c]
-    }
-    visible
+    (r+1..forest.len()).map(|i| forest[i][c])
+                       .all(|cell| cell < forest[r][c])
 }
 
 fn is_visible(forest: &Vec<Vec<usize>>, r: usize, c: usize) -> bool {
