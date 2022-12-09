@@ -43,7 +43,7 @@ fn add(pos: &Pos, dir: &Direction) -> Pos {
 }
 
 #[allow(dead_code)]
-fn compute_distance(head: &Pos, tail: &Pos) -> Direction {
+fn compute_move(head: &Pos, tail: &Pos) -> Direction {
     let mut dx = head.0 - tail.0;
     let mut dy = head.1 - tail.1;
     let distance = Direction(dx, dy);
@@ -62,28 +62,85 @@ fn length(vector: Direction) -> f32 {
     ((vector.0 * vector.0 + vector.1 * vector.1) as f32).sqrt()
 }
 
+fn move_knot(head: &Pos, tail: &Pos, knot_pos: &mut Vec<Pos>){
+    let kmove = compute_move(head, tail);
+    if length(kmove) > 0_f32 {
+        &knot_pos.push(add(tail, &kmove));
+    }
+}
+
 #[allow(dead_code)]
-fn run_cmd(cmd: Move, head_pos: &mut Vec<Pos>, tail_pos: &mut Vec<Pos>) {
+fn run_cmd(cmd: Move, head_pos: &mut Vec<Pos>,
+    knot1_pos: &mut Vec<Pos>,
+    knot2_pos: &mut Vec<Pos>,
+    knot3_pos: &mut Vec<Pos>,
+    knot4_pos: &mut Vec<Pos>,
+    knot5_pos: &mut Vec<Pos>,
+    knot6_pos: &mut Vec<Pos>,
+    knot7_pos: &mut Vec<Pos>,
+    knot8_pos: &mut Vec<Pos>,
+    knot9_pos: &mut Vec<Pos>)
+{
     let direction = &cmd.dir;
-    let tail = *tail_pos.last().unwrap();
-    for i in 0..cmd.dist {
-        &head_pos.push(add(head_pos.last().unwrap(), direction));
-        let head = head_pos.last().unwrap();
-        let tail_move = compute_distance(head, &tail);
-        if length(tail_move) > 0_f32 {
-            &tail_pos.push(add(&tail, &tail_move));
-        }
+    for _i in 0..cmd.dist {
+        let new_head = add(head_pos.last().unwrap(), direction);
+        &head_pos.push(new_head);
+        let knot1 = *knot1_pos.last().unwrap();
+        move_knot(&new_head, &knot1, knot1_pos);
+        let new_knot1 = *knot1_pos.last().unwrap();
+        let knot2 = *knot2_pos.last().unwrap();
+        move_knot(&new_knot1, &knot2, knot2_pos);
+        let new_knot2 = *knot2_pos.last().unwrap();
+        let knot3 = *knot3_pos.last().unwrap();
+        move_knot(&new_knot2, &knot3, knot3_pos);
+        let new_knot3 = *knot3_pos.last().unwrap();
+        let knot4 = *knot4_pos.last().unwrap();
+        move_knot(&new_knot3, &knot4, knot4_pos);
+        let new_knot4 = *knot4_pos.last().unwrap();
+        let knot5 = *knot5_pos.last().unwrap();
+        move_knot(&new_knot4, &knot5, knot5_pos);
+        let new_knot5 = *knot5_pos.last().unwrap();
+        let knot6 = *knot6_pos.last().unwrap();
+        move_knot(&new_knot5, &knot6, knot6_pos);
+        let new_knot6 = *knot6_pos.last().unwrap();
+        let knot7 = *knot7_pos.last().unwrap();
+        move_knot(&new_knot6, &knot7, knot7_pos);
+        let new_knot7 = *knot7_pos.last().unwrap();
+        let knot8 = *knot8_pos.last().unwrap();
+        move_knot(&new_knot7, &knot8, knot8_pos);
+        let new_knot8 = *knot8_pos.last().unwrap();
+        let knot9 = *knot9_pos.last().unwrap();
+        move_knot(&new_knot8, &knot9, knot9_pos);
     }
 }
 
 #[allow(dead_code)]
 fn moves(cmds: Vec<Move>) -> (Vec<Pos>, Vec<Pos>) {
     let mut head_pos = vec![Pos(0,0)];
-    let mut tail_pos = vec![Pos(0,0)];
+    let mut knot1_pos = vec![Pos(0,0)];
+    let mut knot2_pos = vec![Pos(0,0)];
+    let mut knot3_pos = vec![Pos(0,0)];
+    let mut knot4_pos = vec![Pos(0,0)];
+    let mut knot5_pos = vec![Pos(0,0)];
+    let mut knot6_pos = vec![Pos(0,0)];
+    let mut knot7_pos = vec![Pos(0,0)];
+    let mut knot8_pos = vec![Pos(0,0)];
+    let mut knot9_pos = vec![Pos(0,0)];
     for cmd in cmds {
-        run_cmd(cmd, &mut head_pos, &mut tail_pos);
+        run_cmd(cmd,
+                &mut head_pos,
+                &mut knot1_pos,
+                &mut knot2_pos,
+                &mut knot3_pos,
+                &mut knot4_pos,
+                &mut knot5_pos,
+                &mut knot6_pos,
+                &mut knot7_pos,
+                &mut knot8_pos,
+                &mut knot9_pos
+            );
     }
-    (head_pos, tail_pos)
+    (head_pos, knot9_pos)
 }
 
 #[cfg(test)]
@@ -106,8 +163,8 @@ mod tests {
 
     #[test]
     fn it_compute_distance() {
-        assert_eq!(compute_distance(&Pos(1,1), &Pos(0,0)), Direction(0,0));
-        assert_eq!(compute_distance(&Pos(-1,-1), &Pos(0,0)), Direction(0,0));
+        assert_eq!(compute_move(&Pos(1,1), &Pos(0,0)), Direction(0,0));
+        assert_eq!(compute_move(&Pos(-1,-1), &Pos(0,0)), Direction(0,0));
     }
 
     #[test]
@@ -132,12 +189,6 @@ mod tests {
         ]);
         assert_eq!(moves(read_input(inputs::EXAMPLE)).1, vec![
             Pos(0, 0),
-            Pos(1, 0), Pos(2, 0), Pos(3, 0),
-            Pos(4, 1), Pos(4, 2), Pos(4, 3),
-
-            Pos(3, 4), Pos(2, 4),
-            Pos(3, 3), Pos(4, 3),
-            Pos(3, 2), Pos(2, 2), Pos(1, 2)
         ]);
     }
 
@@ -145,6 +196,6 @@ mod tests {
     fn it_solve() { 
         let tail_pos = moves(read_input(inputs::INPUT)).1;
 
-        assert_eq!(HashSet::<Pos>::from_iter::<Vec<Pos>>(tail_pos).len(), 13);
+        assert_eq!(HashSet::<Pos>::from_iter::<Vec<Pos>>(tail_pos).len(), 2724);
     }
 }
