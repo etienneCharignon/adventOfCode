@@ -15,6 +15,11 @@ struct Move {
     dist: i32
 }
 
+#[derive(Debug, PartialEq, Copy, Clone)]
+struct Knot {
+    positions: &mut Vec<Pos>
+}
+
 #[allow(dead_code)]
 fn read_input(input: &str) -> Vec<Move> {
     input.lines().map(|cmd| read_cmd(cmd)).collect::<Vec<Move>>()
@@ -70,7 +75,7 @@ fn move_knot(head: &Pos, tail: &Pos, knot_pos: &mut Vec<Pos>){
 }
 
 #[allow(dead_code)]
-fn run_cmd(cmd: Move, head_pos: &mut Vec<Pos>,
+fn xrun_cmd(cmd: Move, head_pos: &mut Vec<Pos>,
     knot1_pos: &mut Vec<Pos>,
     knot2_pos: &mut Vec<Pos>,
     knot3_pos: &mut Vec<Pos>,
@@ -115,32 +120,25 @@ fn run_cmd(cmd: Move, head_pos: &mut Vec<Pos>,
 }
 
 #[allow(dead_code)]
+fn run_cmd(cmd: Move, rope: &Vec<Knot>) {
+    let direction = &cmd.dir;
+    let  head = rope[0];
+    for _i in 0..cmd.dist {
+        let new_head = add(head.positions.last().unwrap(), direction);
+        &head.positions.push(new_head);
+        let knot1 = *rope[1].positions.last().unwrap();
+        move_knot(&new_head, &knot1, rope[1].positions);
+    }
+}
+
+#[allow(dead_code)]
 fn moves(cmds: Vec<Move>) -> (Vec<Pos>, Vec<Pos>) {
     let mut head_pos = vec![Pos(0,0)];
     let mut knot1_pos = vec![Pos(0,0)];
-    let mut knot2_pos = vec![Pos(0,0)];
-    let mut knot3_pos = vec![Pos(0,0)];
-    let mut knot4_pos = vec![Pos(0,0)];
-    let mut knot5_pos = vec![Pos(0,0)];
-    let mut knot6_pos = vec![Pos(0,0)];
-    let mut knot7_pos = vec![Pos(0,0)];
-    let mut knot8_pos = vec![Pos(0,0)];
-    let mut knot9_pos = vec![Pos(0,0)];
     for cmd in cmds {
-        run_cmd(cmd,
-                &mut head_pos,
-                &mut knot1_pos,
-                &mut knot2_pos,
-                &mut knot3_pos,
-                &mut knot4_pos,
-                &mut knot5_pos,
-                &mut knot6_pos,
-                &mut knot7_pos,
-                &mut knot8_pos,
-                &mut knot9_pos
-            );
+        run_cmd(cmd, &vec![ Knot { positions: &head_pos }, Knot { positions: &knot1_pos } ]);
     }
-    (head_pos, knot9_pos)
+    (head_pos, knot1_pos)
 }
 
 #[cfg(test)]
