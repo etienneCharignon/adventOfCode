@@ -1,4 +1,8 @@
+use std::{thread, time};
+
 mod inputs;
+
+
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct SignalStength(i32, i32);
@@ -12,6 +16,13 @@ fn print(tick: i32, x: i32) -> String {
 
 #[allow(dead_code)]
 pub fn compute_signal(program: &str, screen: &mut String) -> Vec<SignalStength> {
+    let mut full_screen = String::from("
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            ");
     let mut signal_strengths: Vec<SignalStength> = vec![];
     let mut tick: i32 = 0;
     let mut x: i32 = 1;
@@ -22,6 +33,9 @@ pub fn compute_signal(program: &str, screen: &mut String) -> Vec<SignalStength> 
         match instruction[0] {
             "noop" => {
                 screen.push_str(&print(tick, x));
+                full_screen.replace_range(0..screen.len(), screen);
+                println!("{}", full_screen);
+                thread::sleep(time::Duration::from_millis(10));
                 tick += 1;
                 if tick == tick_mesures[i] {
                     signal_strengths.push(SignalStength(tick, x * tick));
@@ -30,12 +44,18 @@ pub fn compute_signal(program: &str, screen: &mut String) -> Vec<SignalStength> 
             }
             "addx" => {
                 screen.push_str(&print(tick, x));
+                full_screen.replace_range(0..screen.len(), screen);
+                println!("{}", full_screen);
+                thread::sleep(time::Duration::from_millis(10));
                 tick += 1;
                 if tick == tick_mesures[i] {
                     signal_strengths.push(SignalStength(tick, x * tick));
                     if i < tick_mesures.len() - 1 { i += 1; }
                 }
                 screen.push_str(&print(tick, x));
+                full_screen.replace_range(0..screen.len(), screen);
+                println!("{}", full_screen);
+                thread::sleep(time::Duration::from_millis(10));
                 tick += 1;
                 if tick == tick_mesures[i] {
                     signal_strengths.push(SignalStength(tick, x * tick));
