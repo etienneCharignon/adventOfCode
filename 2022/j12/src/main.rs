@@ -3,7 +3,9 @@ use j12::read_map;
 use j12::find_path;
 use j12::length;
 use j12::inputs::Point;
+#[allow(unused_imports)]
 use std::collections::HashSet;
+#[allow(unused_imports)]
 use std::collections::HashMap;
 
 fn main() {
@@ -14,9 +16,12 @@ fn main() {
     let h = |p: Point| -> f32 {
         length(p, end)
     };
-    let d = |a: Point, b: Point| -> f32 {
-        let cost = ((map[a.1 as usize][a.0 as usize] - map[b.1 as usize][b.0 as usize]).abs() + 1) as f32;
+    let height = |p: Point| -> i32 {
+        map[p.1 as usize][p.0 as usize] 
+    };
+    let d = |c: Point, n: Point| -> f32 {
+        let cost = (height(n) - height(c) + 1) as f32;
         if cost <= 2_f32 { 1_f32 } else { f32::MAX }
     };
-    find_path(start, end, h, d).iter().count();
+    find_path(start, end, h, d, height).iter().count();
 }
