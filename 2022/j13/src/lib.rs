@@ -1,7 +1,7 @@
 mod inputs;
 
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Item {
     Num(u8),
     List(Vec<Item>)
@@ -9,6 +9,8 @@ pub enum Item {
 
 use Item::Num;
 use Item::List;
+use std::cmp::Ordering;
+use std::cmp::Ordering::{Less, Equal, Greater};
 
 #[allow(dead_code)]
 fn right_order(first: Item, second: Item) -> Option<bool> {
@@ -43,6 +45,15 @@ fn right_order(first: Item, second: Item) -> Option<bool> {
                 }
             }
         }
+    }
+}
+
+#[allow(dead_code)]
+fn right_ordering(first: Item, second: Item) -> Ordering {
+    match right_order(first, second) {
+        Some(true) => Less,
+        Some(false) => Greater,
+        None => Equal
     }
 }
 
@@ -86,6 +97,13 @@ mod tests {
     }
 
     #[test]
+    fn it_is_right_ordering() {
+        assert_eq!(right_ordering(Num(0), Num(1)), Less);
+        assert_eq!(right_ordering(Num(1), Num(0)), Greater);
+        assert_eq!(right_ordering(Num(1), Num(1)), Equal);
+    }
+
+    #[test]
     fn it_find_right_order_items() {
         assert_eq!(find_right_order_items(vec![ Num(0), Num(1) ]), vec![1]);
         assert_eq!(find_right_order_items(vec![
@@ -106,7 +124,8 @@ mod tests {
             List(vec![Num(1),List(vec![Num(2),List(vec![Num(3),List(vec![Num(4),List(vec![Num(5),Num(6),Num(7)])])])]),Num(8),Num(9)]),
             List(vec![Num(1),List(vec![Num(2),List(vec![Num(3),List(vec![Num(4),List(vec![Num(5),Num(6),Num(0)])])])]),Num(8),Num(9)]),
         ]), vec![1, 2, 4, 6]);
-        assert_eq!(find_right_order_items(vec![
+
+        let mut input = vec![
         List(vec![List(vec![]),List(vec![List(vec![List(vec![Num(0)]),List(vec![Num(8),Num(10),Num(2),Num(8)]),List(vec![Num(4)])]),List(vec![List(vec![Num(7),Num(7),Num(2),Num(2)]),Num(10),Num(1),Num(2),List(vec![])])]),List(vec![List(vec![List(vec![Num(6),Num(1),Num(6),Num(8),Num(10)]),List(vec![Num(8),Num(6),Num(4)]),List(vec![]),List(vec![]),Num(2)])])]),
         List(vec![List(vec![List(vec![List(vec![])]),Num(9)]),List(vec![])]),
         List(vec![List(vec![Num(8)])]),
@@ -407,7 +426,12 @@ mod tests {
         List(vec![List(vec![]),List(vec![]),List(vec![List(vec![Num(10)]),List(vec![Num(5)]),List(vec![]),List(vec![List(vec![Num(1),Num(0),Num(9),Num(2)])])])]),
         List(vec![List(vec![Num(5),Num(7),Num(10)]),List(vec![]),List(vec![Num(0),Num(5),List(vec![List(vec![Num(1),Num(7),Num(5)]),Num(9),List(vec![Num(0),Num(1)]),List(vec![Num(9),Num(5),Num(6),Num(5)])]),List(vec![List(vec![Num(10),Num(3),Num(7)]),List(vec![Num(8)]),List(vec![Num(10)])])]),List(vec![Num(1),List(vec![])])]),
         List(vec![List(vec![Num(2),List(vec![Num(0),Num(10)]),List(vec![Num(8),Num(5),List(vec![Num(7),Num(9)]),Num(0),Num(7)]),Num(6)]),List(vec![Num(4)])]),
+        List(vec![List(vec![Num(2)])]),
+        List(vec![List(vec![Num(6)])]),
+        ];
 
-        ]).iter().sum::<usize>(), 4821);
+        input.sort_by(|a, b| right_ordering(a.clone(), b.clone()));
+        assert_eq!(input.iter().position(|x| x.clone() == List(vec![List(vec![Num(2)])])).unwrap() + 1, 110);
+        assert_eq!(input.iter().position(|x| x.clone() == List(vec![List(vec![Num(6)])])).unwrap() + 1, 199);
     }
 }
