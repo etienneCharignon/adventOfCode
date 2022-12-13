@@ -14,8 +14,8 @@ fn main() {
     let h = |p: Point| -> f32 {
         length(p, end)
     };
-    let d = |a: Point, b: Point| -> f32 {
-        let cost = ((map[a.1 as usize][a.0 as usize] - map[b.1 as usize][b.0 as usize]).abs() + 1) as f32;
+    let d = |c: Point, n: Point| -> f32 {
+        let cost = ((map[n.1 as usize][n.0 as usize] - map[c.1 as usize][c.0 as usize]) + 1) as f32;
         if cost <= 2_f32 { 1_f32 } else { f32::MAX }
     };
     find_path(start, end, h, d).iter().count();

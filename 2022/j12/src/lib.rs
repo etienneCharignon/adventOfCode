@@ -5,6 +5,8 @@ use assert_approx_eq::assert_approx_eq;
 use inputs::Point;
 use std::collections::HashSet;
 use std::collections::HashMap;
+use std::io::Write;
+use std::{thread, time};
 
 const DIRECTIONS: [Point; 4] = [
         Point(0, 1),
@@ -93,8 +95,10 @@ where
     fscore.insert(start, h(start));
     while !open_set.is_empty() {
         let current = smallest(&open_set, &fscore).to_owned();
-        // let map_str = to_string(inputs::SCREEN, reconstruct_path(&came_from, current));
-        // println!("{}", map_str);
+        let map_str = to_string(inputs::SCREEN, reconstruct_path(&came_from, current));
+        println!("{}", map_str);
+        std::io::stdout().flush();
+        thread::sleep(time::Duration::from_millis(10));
         if current == goal {
             return reconstruct_path(&came_from, current);
         }
