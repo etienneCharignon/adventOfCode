@@ -1,0 +1,4 @@
+mod inputs;
+
+fn main() {
+}
