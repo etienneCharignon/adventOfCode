@@ -1,11 +1,15 @@
 mod inputs;
 
+use std::io::Write;
+use std::{thread, time};
 #[derive(Debug, Copy, Clone, PartialEq)]
 struct Point(usize, usize);
 #[derive(Debug, Clone, PartialEq)]
 pub struct Obstacle {
     points: Vec<Point>
 }
+
+const L:usize = 600;
 
 #[allow(unused_imports)]
 use std::cmp;
@@ -16,8 +20,8 @@ fn read_point(input: &str) -> Point {
 }
 
 #[allow(dead_code)]
-pub fn read_world_2(input: &str) -> [[char; 1000]; 164] {
-    let mut world: [[char; 1000]; 164] = [[' '; 1000]; 164];
+pub fn read_world_2(input: &str) -> [[char; L]; 164] {
+    let mut world: [[char; L]; 164] = [[' '; L]; 164];
     for line in input.lines() {
         let points: Vec<&str> = line.split(" -> ").collect();
         for i in 1..points.len() {
@@ -110,7 +114,7 @@ fn contains(world: &Vec<Obstacle>, point: Point) -> bool {
 }
 
 #[allow(dead_code)]
-fn drop_sand_2(world: &mut [[char; 1000]; 164]) -> usize {
+fn drop_sand_2(world: &mut [[char; L]; 164]) -> usize {
     let mut x = 500;
     if world[0][500] != ' ' {
         return 0;
@@ -162,10 +166,15 @@ fn drop_sand(world: &mut Vec<Obstacle>, maxy: usize) -> usize {
 }
 
 #[allow(dead_code)]
-pub fn drop_all_sand(world: &mut [[char; 1000]; 164]) -> usize {
+pub fn drop_all_sand(world: &mut [[char; L]; 164]) -> usize {
     let mut count = 0;
     while drop_sand_2(world) == 1 {
         count += 1;
+        for r in 0..164 {
+            println!("{}", String::from_iter(world[r][300..599]));
+        }
+        std::io::stdout().flush();
+        thread::sleep(time::Duration::from_millis(1));
     }
     count
 }
