@@ -1,4 +1,3 @@
-mod inputs;
 use std::cmp;
 use std::collections::HashSet;
 
@@ -40,9 +39,62 @@ fn count_seens(y: i32, input: &Vec<((i32, i32), (i32, i32))>) -> i32 {
     count
 }
 
+#[allow(dead_code)]
+fn first_unseens(y: i32, input: &Vec<((i32, i32), (i32, i32))>, size: i32) -> Option<i32> {
+    let mut x = 0;
+    while x < size {
+        let mut is_seen = false;
+        for (s, b) in input {
+            if seen((x, y), *s, distance(*s, *b)) {
+                is_seen = true;
+                if x < s.0 {
+                    x += (s.0 - x) * 2;
+                }
+                break;
+            }
+        }
+        if !is_seen { return Some(x); }
+        x += 1;
+    }
+    None
+}
+
+#[allow(dead_code)]
+fn sort_input_by_distance_max(input: &mut Vec<((i32, i32), (i32, i32))>) {
+    input.sort_by(|(sa, ba), (sb, bb)| { distance(*sb, *bb).cmp(&distance(*sa, *ba)) })
+}
+
+#[allow(dead_code)]
+fn find_beacon(input: &Vec<((i32, i32), (i32, i32))>, size: i32) -> (i32, i32) {
+    let mut y = 0;
+    while y < size {
+        let x = first_unseens(y, input, size);
+        if x != None {
+            return (x.unwrap(), y);
+        }
+        y += 1;
+    }
+    (0, 0)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn it_sort_inputs() {
+        assert_eq!(distance((9, 16), (10, 16)), 1);
+        assert_eq!(distance((2, 18), (-2, 15)), 7);
+        let mut example: Vec<((i32, i32), (i32, i32))> = vec![
+            ((9, 16), (10, 16)),
+            ((2, 18), (-2, 15)),
+        ];
+        sort_input_by_distance_max(&mut example);
+        assert_eq!(example,vec![
+            ((2, 18), (-2, 15)),
+            ((9, 16), (10, 16)),
+        ]);
+    }
 
     #[test]
     fn it_compute_distance() {
@@ -68,8 +120,8 @@ mod tests {
 
     #[test]
     // #[ignore]
-    fn it_count_seens() {
-        let example: Vec<((i32, i32), (i32, i32))> = vec![
+    fn it_find_beacon() {
+        let mut example: Vec<((i32, i32), (i32, i32))> = vec![
             ((2, 18), (-2, 15)),
             ((9, 16), (10, 16)),
             ((13,2 ), (15, 3)),
@@ -85,9 +137,11 @@ mod tests {
             ((14,3 ), (15, 3)),
             ((20,1 ), (15, 3)),
         ];
-        assert_eq!(count_seens(10, &example), 26);
+        sort_input_by_distance_max(&mut example);
+        assert_eq!(find_beacon(&example, 20), (14, 11));
 
-        let input: Vec<((i32, i32), (i32, i32))> = vec![
+
+        let mut input: Vec<((i32, i32), (i32, i32))> = vec![
             ((2924811, 3544081), (3281893,  3687621)),
             ((2719183, 2520103), (2872326,  2415450)),
             ((3754787, 3322726), (3281893,  3687621)),
@@ -113,6 +167,7 @@ mod tests {
             ((3454465, 966419 ), (4401794,  2000000)),
             ((1902550, 2398376), (2454257,  2594911)),
         ];
-        assert_eq!(count_seens(2000000, &input), 5040643)
+        sort_input_by_distance_max(&mut input);
+        assert_eq!(find_beacon(&input, 4000000), (1, 1));
     }
 }
