@@ -1,5 +1,6 @@
 mod inputs;
-#[derive(Debug, Copy, Clone, PartialEq)]
+use std::collections::HashSet;
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 struct Cube(i32, i32, i32);
 
 #[allow(dead_code)]
@@ -16,7 +17,7 @@ fn add(a: Cube, b: Cube) -> Cube {
 }
 
 #[allow(dead_code)]
-fn count_faces(cubes: Vec<Cube>) -> usize {
+fn count_faces(cubes: Vec<Cube>) -> i32 {
     let directions= vec![
         Cube(1, 0, 0),
         Cube(-1, 0, 0),
@@ -25,11 +26,22 @@ fn count_faces(cubes: Vec<Cube>) -> usize {
         Cube(0, 0, 1),
         Cube(0, 0, -1),
     ];
-    cubes.clone().iter().map(|c| {
+    let mut air_bubbles: HashSet<Cube> = HashSet::new();
+    for c in cubes.clone() {
+        for d in directions.clone() {
+            let neighbour = add(c, d);
+            if !cubes.contains(&neighbour) && directions.clone().iter().all(|d| cubes.contains(&add(neighbour, *d))) { 
+                air_bubbles.insert(neighbour);
+            }
+        }
+    }
+    println!("{:?}", air_bubbles);
+    let faces: i32 = cubes.clone().iter().map(|c| {
         directions.iter()
                   .map(|d| if cubes.contains(&add(*c, *d)) { 0 } else { 1 })
-                  .sum::<usize>()
-    }).sum()
+                  .sum::<i32>()
+    }).sum::<i32>();
+    faces - (air_bubbles.len() as i32) * 6
 }
 
 #[cfg(test)]
@@ -38,7 +50,7 @@ mod tests {
 
     #[test]
     fn it_count_faces() {
-        assert_eq!(count_faces(read_input(inputs::EXAMPLE)), 64);
+        assert_eq!(count_faces(read_input(inputs::EXAMPLE)), 58);
         assert_eq!(count_faces(read_input(inputs::INPUT)), 3500);
     }
 }
