@@ -1,4 +1,5 @@
 mod inputs;
+use std::io::Write;
 use std::collections::HashSet;
 #[derive(Debug, Copy, Clone, PartialEq)]
 struct Point(i32, i32);
@@ -52,7 +53,7 @@ fn add_to_world(world: &mut Vec<HashSet<i32>>, shape: &Vec<Point>) {
 }
 
 #[allow(dead_code)]
-fn fall_to(number_of_shapes: usize, world: &mut Vec<HashSet<i32>>, jets: Vec<char>) -> usize {
+pub fn fall_to(number_of_shapes: usize, world: &mut Vec<HashSet<i32>>, jets: Vec<char>) -> usize {
     let shapes = vec![
         Vec::from(BARE),
         Vec::from(CROSS),
@@ -61,12 +62,43 @@ fn fall_to(number_of_shapes: usize, world: &mut Vec<HashSet<i32>>, jets: Vec<cha
         Vec::from(SQARE),
     ];
     let mut ji = 0;
+    let mut size_of_last_147 = 0;
+    let mut number_of_remaining_drops = 147;
+    let mut size_first_iteration = 0;
+    let mut dropped_first_iteration = 0;
+    let mut dropped_second_iteration = 0;
+    let mut size_second_iteration = 0;
     for n in 0..number_of_shapes {
         let mut shape = start_falling(world, shapes[n % shapes.len()].to_vec());
-        println!("New SHAPE");
+        //println!("New SHAPE");
         loop {
-            println!("{}, {:?}", jets[ji % jets.len()], shape);
+            //println!("{}, {:?}", jets[ji % jets.len()], shape);
             let mut new_shape = blow(&shape, jets[ji % jets.len()]);
+            if n == dropped_first_iteration + number_of_remaining_drops {
+                println!("n : {}, {}", n, world.len());
+                size_of_last_147 = world.len() - size_first_iteration;
+            }
+            if ji%jets.len() == 0 {
+                let jet_iteration = ji/jets.len();
+                if jet_iteration == 1 {
+                    size_first_iteration = world.len();
+                    dropped_first_iteration = n;
+                }
+                if jet_iteration == 2 {
+                    size_second_iteration = world.len() - size_first_iteration;
+                    dropped_second_iteration = n - dropped_first_iteration;
+                    number_of_remaining_drops = (1000000000000 - dropped_first_iteration) % dropped_second_iteration;
+                    println!("remaining drops {}", number_of_remaining_drops);
+                }
+                println!("{}, {}, {}", n, jet_iteration, world.len());
+                //println!("{}, {:?}", jets[ji % jets.len()], shape);
+                std::io::stdout().flush();
+                if jet_iteration == 10 {
+                    let number_of_repetition = (1000000000000 - dropped_first_iteration) / dropped_second_iteration;
+                    println!("{}", number_of_repetition);
+                    return size_first_iteration + size_second_iteration * number_of_repetition + size_of_last_147;
+                }
+            }
             ji += 1;
             if !collision(&new_shape, world) {
                shape = new_shape;
@@ -148,16 +180,17 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn it_falls_2022_example() {
         let jets = ">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>".chars().collect();
         let mut world: Vec<HashSet<i32>> = vec![];
-        assert_eq!(fall_to(2022, &mut world, jets), 3068);
+        assert_eq!(fall_to(1000000000000, &mut world, jets), 1514285714288);
     }
 
     #[test]
     fn it_falls_2022() {
         let jets = inputs::INPUT.chars().collect();
         let mut world: Vec<HashSet<i32>> = vec![];
-        assert_eq!(fall_to(2022, &mut world, jets), 3179);
+        assert_eq!(fall_to(1000000000000, &mut world, jets), 1567723342929);
     }
 }
