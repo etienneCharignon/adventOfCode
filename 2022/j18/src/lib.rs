@@ -17,7 +17,8 @@ fn add(a: Cube, b: Cube) -> Cube {
 }
 
 #[allow(dead_code)]
-fn count_faces(cubes: Vec<Cube>) -> i32 {
+fn count_faces(start: Cube, cubes: Vec<Cube>) -> usize
+{
     let directions= vec![
         Cube(1, 0, 0),
         Cube(-1, 0, 0),
@@ -26,23 +27,27 @@ fn count_faces(cubes: Vec<Cube>) -> i32 {
         Cube(0, 0, 1),
         Cube(0, 0, -1),
     ];
-    let mut air_bubbles: HashSet<Cube> = HashSet::new();
-    for c in cubes.clone() {
+    let mut visited = HashSet::from([start]);
+    let mut opens = Vec::from([start]);
+    let mut surfaces_count = 0;
+    while !opens.is_empty() {
+        let current = opens.pop().unwrap();
         for d in directions.clone() {
-            let neighbour = add(c, d);
-            if !cubes.contains(&neighbour) && directions.clone().iter().all(|d| cubes.contains(&add(neighbour, *d))) { 
-                air_bubbles.insert(neighbour);
+            let neighbour = add(current, d);
+            if vec![neighbour.0, neighbour.1, neighbour.2].iter().any(|n| *n < -1 || *n > 20) || visited.contains(&neighbour) {
+                continue;
+            }
+            if cubes.contains(&neighbour) {
+                surfaces_count += 1;
+            }
+            else {
+                opens.push(neighbour);
+                visited.insert(neighbour);
             }
         }
     }
-    println!("{:?}", air_bubbles);
-    let faces: i32 = cubes.clone().iter().map(|c| {
-        directions.iter()
-                  .map(|d| if cubes.contains(&add(*c, *d)) { 0 } else { 1 })
-                  .sum::<i32>()
-    }).sum::<i32>();
-    faces - (air_bubbles.len() as i32) * 6
-}
+    surfaces_count
+}  
 
 #[cfg(test)]
 mod tests {
@@ -50,7 +55,8 @@ mod tests {
 
     #[test]
     fn it_count_faces() {
-        assert_eq!(count_faces(read_input(inputs::EXAMPLE)), 58);
-        assert_eq!(count_faces(read_input(inputs::INPUT)), 3500);
+        assert_eq!(count_faces(Cube(0, 0, 0), read_input(inputs::EXAMPLE)), 58);
+        // 2041 is too low
+        assert_eq!(count_faces(Cube(0, 0, 0), read_input(inputs::INPUT)), 2048);
     }
 }
