@@ -3,20 +3,25 @@ mod inputs;
 #[allow(unused_imports)]
 use std::collections::HashSet;
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-struct Item(usize, i32);
+struct Item(usize, i64);
 
 #[allow(dead_code)]
 fn read_input(input: &str) -> Vec<Item> {
-    input.lines().enumerate().map(|(i, l)| Item(i, l.parse::<i32>().unwrap())).collect()
+    input.lines().enumerate().map(|(i, l)| Item(i, l.parse::<i64>().unwrap())).collect()
 }
 
-fn move_one(file: &mut Vec<Item>, n: usize, file_length: i32) {
+#[allow(dead_code)]
+fn decrypt(input: Vec<Item>) -> Vec<Item> {
+    input.iter().map(|i| Item(i.0, i.1 * 811589153)).collect()
+}
+
+fn move_one(file: &mut Vec<Item>, n: usize, file_length: i64) {
     let position = file.iter().position(|item| item.0 == n).unwrap();
     let item = file[position];
     if item.1 == 0 {
         return;
     }
-    let mut new_pos = (position as i32 + item.1) % (file_length - 1);
+    let mut new_pos = (position as i64 + item.1) % (file_length - 1);
     if new_pos < 0 {
         new_pos += file_length - 1;
     }
@@ -28,15 +33,23 @@ fn move_one(file: &mut Vec<Item>, n: usize, file_length: i32) {
 fn mix(file: &mut Vec<Item>) -> Vec<Item> {
     let file_length = file.len();
     for n in 0..file_length {
-       // println!("{:?}", file.iter().map(|i| i.1).collect::<Vec<i32>>());
-        move_one(file, n, file_length as i32);
+       // println!("{:?}", file.iter().map(|i| i.1).collect::<Vec<i64>>());
+        move_one(file, n, file_length as i64);
     }
-    //println!("{:?}", file.iter().map(|i| i.1).collect::<Vec<i32>>());
+    //println!("{:?}", file.iter().map(|i| i.1).collect::<Vec<i64>>());
     file.to_vec()
 }
 
 #[allow(dead_code)]
-fn grove(file: &Vec<Item>) -> (usize, i32, i32, i32) {
+fn mix10(file: &mut Vec<Item>) -> Vec<Item> {
+    for _ in 0..10 {
+        mix(file);
+    }
+    file.to_vec()
+}
+
+#[allow(dead_code)]
+fn grove(file: &Vec<Item>) -> (usize, i64, i64, i64) {
     let zero_pos = file.iter().position(|item| item.1 == 0).unwrap();
     let file_length = file.len();
     (
@@ -138,7 +151,7 @@ mod tests {
 
     #[test]
     fn it_solve() {
-        assert_eq!(grove(&mix(&mut read_input(inputs::EXAMPLE))), (5, 4, -3, 2));
-        assert_eq!(grove(&mix(&mut read_input(inputs::INPUT))), (2088, -7205, 4867, 8242));
+        assert_eq!(grove(&mix10(&mut decrypt(read_input(inputs::EXAMPLE)))), (6, 811589153, 2434767459, -1623178306));
+        assert_eq!(grove(&mix10(&mut decrypt(read_input(inputs::INPUT)))), (2166, -764516982126, 3812845840794, 5284256975183));
     }
 }
