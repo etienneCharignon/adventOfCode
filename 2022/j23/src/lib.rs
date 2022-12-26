@@ -4,7 +4,7 @@ use std::collections::HashSet;
 #[allow(unused_imports)]
 use std::cmp;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Ord, PartialOrd)]
 struct Elf(i32, i32);
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 struct Dir(i32, i32);
@@ -66,15 +66,26 @@ fn intention(elf: &Elf, map: &HashSet<Elf>, offset: usize) -> Elf {
     *elf
 }
 
+fn compare(a: &HashSet<Elf>, b: &HashSet<Elf>) -> bool {
+    let mut a_vec = Vec::from_iter(a);
+    let mut b_vec = Vec::from_iter(b);
+    a_vec.sort();
+    b_vec.sort();
+    a_vec.iter().enumerate().all(|(i, elf)| *elf == b_vec[i])
+}
+
 #[allow(dead_code)]
-fn run_round(n: usize, map: &HashSet<Elf>) -> HashSet<Elf> {
+fn run_round(n: usize, map: HashSet<Elf>) -> usize {
     let mut new_map: HashSet<Elf> = HashSet::new();
-    let mut from_map: &HashSet<Elf> = map;
+    let mut from_map = map;
     for i in 0..n {
-        new_map = run_a_round(i, from_map);
-        from_map = &new_map
+        new_map = run_a_round(i, &from_map);
+        if compare(&new_map, &from_map) {
+            return i + 1;
+        }
+        from_map = new_map.clone();
     }
-    new_map
+    n
 }
 
 #[allow(dead_code)]
@@ -101,7 +112,7 @@ fn run_a_round(offset: usize, from_map: &HashSet<Elf>) -> HashSet<Elf> {
         }
     }
 
-    println!("{}", print_map(&new_map));
+    // println!("{}", print_map(&new_map));
     new_map
 }
 
@@ -164,8 +175,8 @@ mod tests {
     #[test]
     fn it_run_round() {
         //assert_eq!(run_round(1, &HashSet::from([Elf(0,0)])), HashSet::from([Elf(0,-1)]));
-        assert_eq!(run_round(1, &read_input(".....\n..##.")), read_input("..##."));
-        assert_eq!(run_round(1, &read_input(".....
+        assert_eq!(run_a_round(0, &read_input(".....\n..##.")), read_input("..##."));
+        assert_eq!(run_a_round(0, &read_input(".....
 ..##.
 ..#..
 .....
@@ -176,23 +187,17 @@ mod tests {
 ...#.
 ..#..
 ....."));
-        assert_eq!(run_round(3, &read_input(".....
+        assert_eq!(run_round(3, read_input(".....
 ..##.
 ..#..
 .....
 ..##.
-.....")), read_input(
-"..#..
-....#
-#....
-....#
-.....
-..#.."));
+.....")), 3);
     }
 
     #[test]
     fn it_score() {
-        assert_eq!(count_empty(&run_round(10, &read_input(inputs::EXAMPLE))), 110);
-        assert_eq!(count_empty(&run_round(10, &read_input(inputs::INPUT))), 3970);
+        assert_eq!(run_round(21, read_input(inputs::EXAMPLE)), 20);
+        assert_eq!(run_round(1000, read_input(inputs::INPUT)), 923);
     }
 }
