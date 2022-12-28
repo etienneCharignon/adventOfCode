@@ -1,7 +1,6 @@
 mod inputs;
 use std::collections::HashSet;
 use std::collections::HashMap;
-use std::cmp;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Ord, PartialOrd)]
 struct Direction(i32, i32);
@@ -62,6 +61,7 @@ fn get_map(time: i32, blizzards: (usize, usize, Vec<Blizzard>)) -> HashSet<Obsta
     obstacles
 }
 
+#[allow(dead_code)]
 fn print_map(w: usize, h: usize, map: &HashSet<Obstacle>, current: Position) -> String {
     let mut print = String::new();
     for y in 0..h {
@@ -91,24 +91,20 @@ fn reconstruct_path(came_from: &HashMap<Position, Position>, start: Position) ->
     total_path
 }
 
-#[allow(dead_code)]
-fn smallest(open_set: &HashSet<Position>, fscore: &HashMap<Position, usize>) -> Position {
-    let position = open_set.iter()
-            .map(|position| (position, fscore.get(position).clone().unwrap_or(&usize::MAX)))
-            .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
-            .unwrap()
-            .0;
-    *position
-}
-
 fn shortest_time(a: Position, b: Position) -> usize {
     (b.0-a.0).abs() as usize + (b.1 - a.1).abs() as usize
 }
 
 fn length(a: Position, b: Position) -> usize {
-    (b.0-a.0).abs() as usize + (b.1 - a.1).abs() as usize + (b.2 - a.2).abs() as usize
-    // let distance = Position(b.0 - a.0, b.1 - a.1, 0);
-    // ((distance.0 * distance.0 + distance.1 * distance.1) as f32).sqrt()
+    (b.0-a.0).abs() as usize + (b.1 - a.1).abs() as usize
+}
+
+fn smallest(open_set: &HashSet<Position>, fscore: &HashMap<Position, usize>) -> Position {
+    *open_set.iter()
+            .map(|position| (position, fscore.get(position).clone().unwrap_or(&usize::MAX)))
+            .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+            .unwrap()
+            .0
 }
 
 fn neighbor(a: Position, b: Direction) -> Position {
@@ -129,14 +125,14 @@ fn neighbors(current: Position, w: usize, h: usize, blizzards: &Vec<Blizzard>) -
 }
 
 #[allow(dead_code)]
-pub fn find_path(start: Position, goal: Position, blizzards: (usize, usize, Vec<Blizzard>)) -> usize {
+pub fn find_path(start: Position, goal: Position, blizzards: (usize, usize, Vec<Blizzard>)) -> Position {
     let mut open_set = HashSet::from([start]);
     //let mut came_from: HashMap<Position, Position> = HashMap::new();
     let mut gscore: HashMap<Position, usize> =HashMap::new();
     gscore.insert(start, 0);
     let mut fscore: HashMap<Position, usize> =HashMap::new();
     fscore.insert(start, length(start, goal));
-    let mut winner = usize::MAX;
+    let mut winner = Position(0, 0, i32::MAX);
     while !open_set.is_empty() {
         let current = smallest(&open_set, &fscore).to_owned();
 
@@ -145,19 +141,19 @@ pub fn find_path(start: Position, goal: Position, blizzards: (usize, usize, Vec<
         //let map_str = to_string(inputs::SCREEN, reconstruct_path(&came_from, current));
         //println!("{}", map_str);
         if current.0 == goal.0 && current.1 == goal.1 {
-            winner = cmp::min(winner, current.2 as usize);
-            println!("{}", winner);
+            winner = if winner.2 < current.2 { winner } else { current };
+            println!("{:?}", winner);
             open_set.remove(&current);
-            continue
-            // return current.2 as usize; //reconstruct_path(&came_from, current).len();
+            break;
         }
         for neighbor in neighbors(current, blizzards.0, blizzards.1, &blizzards.2) {
             let tentative_gscore = neighbor.2 as usize;
-            if tentative_gscore < winner && tentative_gscore < gscore.get(&neighbor).cloned().unwrap_or(usize::MAX) {
+            if tentative_gscore < winner.2 as usize
+            && tentative_gscore < gscore.get(&neighbor).cloned().unwrap_or(usize::MAX) {
                 //came_from.insert(neighbor, current);
                 gscore.insert(neighbor, tentative_gscore);
                 fscore.insert(neighbor, tentative_gscore + length(neighbor, goal));
-                if tentative_gscore + shortest_time(neighbor, goal) < winner {
+                if tentative_gscore + shortest_time(neighbor, goal) < winner.2 as usize {
                     open_set.insert(neighbor);
                 }
             }
@@ -165,12 +161,31 @@ pub fn find_path(start: Position, goal: Position, blizzards: (usize, usize, Vec<
         open_set.remove(&current);
     }
     winner
-    // panic!("path not found");
+}
+
+#[allow(dead_code)]
+pub fn solve(start: Position, goal: Position, blizzards: (usize, usize, Vec<Blizzard>)) -> Position {
+    let mut winner = find_path(start, goal, (blizzards.0, blizzards.1, blizzards.2.clone()));
+    // let mut winner = Position(120, 26, 314);
+    println!("arrived but…");
+    winner = find_path(winner, Position(1, 0, i32::MAX), (blizzards.0, blizzards.1, blizzards.2.clone()));
+    // let mut winner = Position(1, 0, 574);
+    println!("went back !");
+    find_path(winner, goal, (blizzards.0, blizzards.1, blizzards.2.clone()))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn it_find_smallest() {
+        let p1 = Position(1,0,0);
+        let p2 = Position(1,1,0);
+        assert_eq!(smallest(&HashSet::from([p1, p2]), &HashMap::from([(p1, 1), (p2, 2)])), p1);
+        assert_eq!(smallest(&HashSet::from([p1, p2]), &HashMap::from([(p1, 2), (p2, 1)])), p2);
+        assert_eq!(smallest(&HashSet::from([p1, p2]), &HashMap::from([(p1, 2)])), p1);
+    }
 
     #[test]
     fn it_read_blizzards() {
@@ -247,8 +262,7 @@ mod tests {
 
     #[test]
     fn it_find_path() {
-        assert_eq!(find_path(Position(1, 0, 0), Position(6, 5, i32::MAX), read_blizzards(inputs::EXAMPLE)), 18);
-        assert_eq!(find_path(Position(1, 0, 0), Position(120, 26, i32::MAX), read_blizzards(inputs::INPUT)), 314);
-        // 242, 313 non !
+        assert_eq!(solve(Position(1, 0, 0), Position(6, 5, i32::MAX), read_blizzards(inputs::EXAMPLE)).2, 54);
+        assert_eq!(solve(Position(1, 0, 0), Position(120, 26, i32::MAX), read_blizzards(inputs::INPUT)).2, 896);
     }
 }
