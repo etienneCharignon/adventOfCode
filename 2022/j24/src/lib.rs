@@ -91,10 +91,6 @@ fn reconstruct_path(came_from: &HashMap<Position, Position>, start: Position) ->
     total_path
 }
 
-fn shortest_time(a: Position, b: Position) -> usize {
-    (b.0-a.0).abs() as usize + (b.1 - a.1).abs() as usize
-}
-
 fn length(a: Position, b: Position) -> usize {
     (b.0-a.0).abs() as usize + (b.1 - a.1).abs() as usize
 }
@@ -111,13 +107,11 @@ fn neighbor(a: Position, b: Direction) -> Position {
     Position(a.0+b.0, a.1+b.1, a.2 + 1)
 }
 
-fn neighbors(current: Position, w: usize, h: usize, blizzards: &Vec<Blizzard>) -> Vec<Position> {
-    let next_tick = current.2 + 1;
-    let obstacles = get_map(next_tick, (w, h, blizzards.clone()));
+fn neighbors(current: Position, obstacles: &HashSet<Obstacle>, max: i32) -> Vec<Position> {
     let mut result: Vec<Position> = vec![];
     for d in 0..5 {
         let p = neighbor(current, DIRECTIONS[d]);
-        if p.1 >= 0 && ! obstacles.contains(&Obstacle(p.0, p.1)) {
+        if p.1 >= 0 && p.1 < max && ! obstacles.contains(&Obstacle(p.0, p.1)) {
             result.push(p);
         }
     }
@@ -127,35 +121,34 @@ fn neighbors(current: Position, w: usize, h: usize, blizzards: &Vec<Blizzard>) -
 #[allow(dead_code)]
 pub fn find_path(start: Position, goal: Position, blizzards: (usize, usize, Vec<Blizzard>)) -> Position {
     let mut open_set = HashSet::from([start]);
-    //let mut came_from: HashMap<Position, Position> = HashMap::new();
     let mut gscore: HashMap<Position, usize> =HashMap::new();
     gscore.insert(start, 0);
     let mut fscore: HashMap<Position, usize> =HashMap::new();
     fscore.insert(start, length(start, goal));
+    let mut world: HashMap<i32, HashSet<Obstacle>> =HashMap::new();
     let mut winner = Position(0, 0, i32::MAX);
     while !open_set.is_empty() {
         let current = smallest(&open_set, &fscore).to_owned();
 
-        // let obstacles = get_map(current.2, (blizzards.0, blizzards.1, blizzards.2.clone()));
-        // println!("minute {} :\n{}", current.2, print_map(blizzards.0, blizzards.1, &obstacles, current));
         //let map_str = to_string(inputs::SCREEN, reconstruct_path(&came_from, current));
         //println!("{}", map_str);
         if current.0 == goal.0 && current.1 == goal.1 {
             winner = if winner.2 < current.2 { winner } else { current };
             println!("{:?}", winner);
-            open_set.remove(&current);
             break;
         }
-        for neighbor in neighbors(current, blizzards.0, blizzards.1, &blizzards.2) {
+        let next_tick = current.2 + 1;
+        if ! world.contains_key(&next_tick) {
+            world.insert(next_tick, get_map(next_tick, (blizzards.0, blizzards.1, blizzards.2.clone())));
+        }
+        let obstacles = world.get(&next_tick).unwrap();
+        // println!("minute {} :\n{}", current.2, print_map(blizzards.0, blizzards.1, &obstacles, current));
+        for neighbor in neighbors(current, &obstacles, blizzards.1 as i32) {
             let tentative_gscore = neighbor.2 as usize;
-            if tentative_gscore < winner.2 as usize
-            && tentative_gscore < gscore.get(&neighbor).cloned().unwrap_or(usize::MAX) {
-                //came_from.insert(neighbor, current);
+            if tentative_gscore < gscore.get(&neighbor).cloned().unwrap_or(usize::MAX) {
                 gscore.insert(neighbor, tentative_gscore);
                 fscore.insert(neighbor, tentative_gscore + length(neighbor, goal));
-                if tentative_gscore + shortest_time(neighbor, goal) < winner.2 as usize {
-                    open_set.insert(neighbor);
-                }
+                open_set.insert(neighbor);
             }
         }
         open_set.remove(&current);
@@ -251,11 +244,11 @@ mod tests {
 
     #[test]
     fn it_find_neighbor() {
-        assert_eq!(neighbors(Position(1, 0, 0), 8, 8, &vec![
-            Blizzard(0, 0, Direction(0, 0)),
-            Blizzard(2, 0, Direction(0, 0)),
-            Blizzard(1, 1, Direction(0, 0)),
-        ]), vec![
+        assert_eq!(neighbors(Position(1, 0, 0), &HashSet::from_iter(vec![
+            Obstacle(0, 0),
+            Obstacle(2, 0),
+            Obstacle(1, 1),
+        ]), 5), vec![
             Position(1, 0, 1),
         ]);
     }
@@ -263,6 +256,13 @@ mod tests {
     #[test]
     fn it_find_path() {
         assert_eq!(solve(Position(1, 0, 0), Position(6, 5, i32::MAX), read_blizzards(inputs::EXAMPLE)).2, 54);
+        assert_eq!(find_path(Position(1, 0, 0), Position(120, 26, i32::MAX), read_blizzards(inputs::INPUT)).2, 314);
+        assert_eq!(find_path(Position(120, 26, 314), Position(1, 0, i32::MAX), read_blizzards(inputs::INPUT)).2, 574);
+        assert_eq!(find_path(Position(1, 0, 574), Position(120, 26, i32::MAX), read_blizzards(inputs::INPUT)).2, 896);
+    }
+
+    #[test]
+    fn it_solve_part_2() {
         assert_eq!(solve(Position(1, 0, 0), Position(120, 26, i32::MAX), read_blizzards(inputs::INPUT)).2, 896);
     }
 }
