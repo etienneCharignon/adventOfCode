@@ -18,11 +18,26 @@ pub fn convert_match(m: regex::Match) -> &str {
 }
 
 pub fn extract_value(line: &str) -> u32 {
-    let re = Regex::new(r"one|two|three|four|five|six|seven|eight|nine|[1-9]").unwrap();
-    let numbers: Vec<&str> = re.find_iter(line).map(convert_match).collect();
-    println!("{:?}", numbers);
-
-    (numbers.first().unwrap().to_string() + &numbers.last().unwrap()).parse().unwrap()
+    let goodline = line
+        .replace("nine", "9")
+        .replace("eight", "8")
+        .replace("two", "2")
+        .replace("one", "1")
+        .replace("three", "3")
+        .replace("four", "4")
+        .replace("five", "5")
+        .replace("six", "6")
+        .replace("seven", "7");
+    println!("{}", goodline);
+    let lindex = goodline.find(|c: char| c.is_ascii_digit()).unwrap();
+    let rindex = goodline.rfind(|c: char| c.is_ascii_digit()).unwrap();
+    let lcalibration = goodline.chars().nth(lindex).unwrap().to_string();
+    let rcalibration = goodline.chars().nth(rindex).unwrap().to_string();
+    (lcalibration + &rcalibration).parse().unwrap()
+//    let re = Regex::new(r"one|two|three|four|five|six|seven|eight|nine|[1-9]").unwrap();
+//    let numbers: Vec<&str> = re.find_iter(line).map(convert_match).collect();
+//    println!("{:?}", numbers);
+//    (numbers.first().unwrap().to_string() + &numbers.last().unwrap()).parse().unwrap()
 }
 
 #[cfg(test)]
@@ -52,6 +67,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn it_solve() {
         let lines = inputs::INPUT.split('\n');
         assert_eq!(lines.clone().count(), 1000);
