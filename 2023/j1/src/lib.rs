@@ -2,8 +2,8 @@ mod inputs;
 
 use regex::Regex;
 
-pub fn convert_match(m: regex::Match) -> &str {
-    match m.as_str() {
+pub fn convert_match(s: &str) -> &str {
+    match s {
         "one" => "1",
         "two" => "2",
         "three" => "3",
@@ -13,31 +13,18 @@ pub fn convert_match(m: regex::Match) -> &str {
         "seven" => "7",
         "eight" => "8",
         "nine" => "9",
-        _ => m.as_str()
+        _ => s
     }
 }
 
 pub fn extract_value(line: &str) -> u32 {
-    let goodline = line
-        .replace("nine", "9")
-        .replace("eight", "8")
-        .replace("two", "2")
-        .replace("one", "1")
-        .replace("three", "3")
-        .replace("four", "4")
-        .replace("five", "5")
-        .replace("six", "6")
-        .replace("seven", "7");
-    println!("{}", goodline);
-    let lindex = goodline.find(|c: char| c.is_ascii_digit()).unwrap();
-    let rindex = goodline.rfind(|c: char| c.is_ascii_digit()).unwrap();
-    let lcalibration = goodline.chars().nth(lindex).unwrap().to_string();
-    let rcalibration = goodline.chars().nth(rindex).unwrap().to_string();
-    (lcalibration + &rcalibration).parse().unwrap()
-//    let re = Regex::new(r"one|two|three|four|five|six|seven|eight|nine|[1-9]").unwrap();
-//    let numbers: Vec<&str> = re.find_iter(line).map(convert_match).collect();
-//    println!("{:?}", numbers);
-//    (numbers.first().unwrap().to_string() + &numbers.last().unwrap()).parse().unwrap()
+    let re = Regex::new(r"one|two|three|four|five|six|seven|eight|nine|[1-9]").unwrap();
+    let er = Regex::new(r".*(one|two|three|four|five|six|seven|eight|nine|[1-9])").unwrap();
+    let first: &str = convert_match(re.find(line).unwrap().as_str());
+    let last_capture = er.captures(line).unwrap();
+    let last: &str = convert_match(&last_capture[1]);
+
+    (first.to_string() + last).parse().unwrap()
 }
 
 #[cfg(test)]
@@ -46,6 +33,7 @@ mod tests {
 
     #[test]
     fn it_extract_value() {
+        assert_eq!(extract_value("five61oneightr"), 58);
         assert_eq!(extract_value("1abc2"), 12);
         assert_eq!(extract_value("pqr3stu8vwx"), 38);
         assert_eq!(extract_value("treb7uchet"), 77);
@@ -67,13 +55,11 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn it_solve() {
         let lines = inputs::INPUT.split('\n');
         assert_eq!(lines.clone().count(), 1000);
         let calibration_values: Vec<u32> = lines.map(extract_value).collect();
-        println!("{:?}", calibration_values);
         assert_eq!(calibration_values.len(), 1000);
-        assert_eq!(calibration_values.iter().sum::<u32>(), 55607);
+        assert_eq!(calibration_values.iter().sum::<u32>(), 55614);
     }
 }
