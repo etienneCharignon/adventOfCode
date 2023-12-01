@@ -1,6 +1,12 @@
 mod inputs;
 
+use lazy_static::lazy_static;
 use regex::Regex;
+
+lazy_static! {
+    static ref RE: Regex = Regex::new(r"one|two|three|four|five|six|seven|eight|nine|[1-9]").unwrap();
+    static ref ER: Regex = Regex::new(r".*(one|two|three|four|five|six|seven|eight|nine|[1-9])").unwrap();
+}
 
 pub fn convert_match(s: &str) -> &str {
     match s {
@@ -18,10 +24,8 @@ pub fn convert_match(s: &str) -> &str {
 }
 
 pub fn extract_value(line: &str) -> u32 {
-    let re = Regex::new(r"one|two|three|four|five|six|seven|eight|nine|[1-9]").unwrap();
-    let er = Regex::new(r".*(one|two|three|four|five|six|seven|eight|nine|[1-9])").unwrap();
-    let first: &str = convert_match(re.find(line).unwrap().as_str());
-    let last_capture = er.captures(line).unwrap();
+    let first: &str = convert_match(RE.find(line).unwrap().as_str());
+    let last_capture = ER.captures(line).unwrap();
     let last: &str = convert_match(&last_capture[1]);
 
     (first.to_string() + last).parse().unwrap()
