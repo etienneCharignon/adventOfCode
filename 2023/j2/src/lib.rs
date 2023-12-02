@@ -19,12 +19,9 @@ lazy_static! {
 }
 
 pub fn read_color(re: &Regex, set: &str) -> u32 {
-    if re.is_match(set) {
-       let cap: regex::Captures = re.captures(set).unwrap();
-        cap[1].parse().unwrap()
-    }
-    else {
-        0
+    match re.captures(set) {
+        Some(cap) => cap[1].parse().unwrap(),
+        None => 0
     }
 }
 
@@ -61,6 +58,12 @@ pub fn count_games(input: &str) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn it_read_color() {
+        assert_eq!(read_color(&RED, "8 blue, 4 red"), 4);
+        assert_eq!(read_color(&RED, "8 blue, 4 green"), 0);
+    }
 
     #[test]
     fn it_solve_example() {
