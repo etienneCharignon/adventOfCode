@@ -8,21 +8,21 @@ lazy_static! {
     static ref STAR: Regex = Regex::new(r"[*]").unwrap();
 }
 
-pub fn is_symbol(c: u8) -> bool {
+pub fn is_symbol(c: char) -> bool {
     let is: bool = match c {
-        0x21 ..= 0x2D => true,
-        0x3A ..= 0x40 => true,
-        0x2F => true,
-        _ => false,
+        '.' => false,
+        '\n' => false,
+        '0'..='9' => false,
+        _ => true,
     };
-    if char::from(c) != '.' && is == false {
-        println!("{:?}", (char::from(c), is));
+    if c != '.' && is == false {
+        println!("{:?}", (c, is));
     }
     is
 }
 
 pub fn is_surounded(row_index: usize, from: usize, to: usize, world: &str) -> bool {
-    let bytes = world.as_bytes();
+    let bytes: Vec<char> = world.chars().collect();
     let row_len = world.chars().position(|c| c == '\n').unwrap() + 1;
     let row_number = world.lines().count();
     let start = if from > 0 { from - 1 } else { from };
@@ -36,16 +36,11 @@ pub fn is_surounded(row_index: usize, from: usize, to: usize, world: &str) -> bo
             return true;
         }
     }
-    if from > 0 && is_symbol(bytes[from - 1 + (row_index) * row_len]) {
-        return true;
-    }
-    if is_symbol(bytes[to + (row_index) * row_len]) {
-        return true;
-    }
-    false
+    (from > 0 && is_symbol(bytes[from - 1 + row_index * row_len])) || 
+    is_symbol(bytes[to + row_index * row_len])
 }
 
-pub fn find_row_part(row_index: usize, row: &str, world: &str) -> Vec<(usize, usize, usize, u32)> {
+pub fn find_row_part(row_index: usize, row: &str) -> Vec<(usize, usize, usize, u32)> {
     RE.captures_iter(row).map(|c| {
         let m = c.get(0).unwrap();
         (row_index, m.start(), m.end(), c[0].parse::<u32>().unwrap())
@@ -53,16 +48,16 @@ pub fn find_row_part(row_index: usize, row: &str, world: &str) -> Vec<(usize, us
 }
 
 pub fn find_parts(input: &str) -> Vec<(usize, usize, usize, u32)> {
-    let mut parts: Vec<(usize, usize, usize, u32)> = Vec::new();
-    let mut row_index: usize = 0;
+    let mut parts = Vec::<(usize, usize, usize, u32)>::new();
+    let mut row_index = 0usize;
     for row in input.lines() {
-        parts.extend(find_row_part(row_index, row, input));
+        parts.extend(find_row_part(row_index, row));
         row_index = row_index + 1;
     }
     parts
 }
 
-pub fn find_ajacent(parts: &Vec<(usize, usize, usize, u32)>, x: usize, y: usize) -> Vec<u32> {
+pub fn find_adjacent(parts: &Vec<(usize, usize, usize, u32)>, x: usize, y: usize) -> Vec<u32> {
     println!("{:?}", (x, y));
     let adjacent: Vec<u32> = parts.iter().filter(|p| is_close_to(**p, x, y)).map(|p| p.3).collect();
     println!("{:?}", adjacent);
@@ -79,7 +74,7 @@ pub fn solve(input: &str) -> u32 {
     let row_len = input.chars().position(|c| c == '\n').unwrap() + 1;
     STAR.captures_iter(input).map(|c| {
         let m = c.get(0).unwrap();
-        find_ajacent(&parts, m.start()/row_len, m.start()%row_len).iter().product::<u32>()
+        find_adjacent(&parts, m.start()/row_len, m.start()%row_len).iter().product::<u32>()
     }).sum()
 }
 
@@ -110,11 +105,11 @@ mod tests {
 
     #[test]
     fn it_is_symbol() {
-        for c in "*#+$/@".as_bytes() {
-            assert_eq!(is_symbol(*c), true);
+        for c in "*#+$/@".chars() {
+            assert_eq!(is_symbol(c), true);
         }
-        for c in ".1234567890".as_bytes() {
-            assert_eq!(is_symbol(*c), false);
+        for c in ".1234567890".chars() {
+            assert_eq!(is_symbol(c), false);
         }
     }
 
