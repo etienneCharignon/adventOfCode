@@ -28,9 +28,12 @@ pub fn count_cards(index: i32, won_cards: usize, winings: &Vec<usize>) -> usize 
     match won_cards {
         0 => 0,
         _ => {
-            let from_slice: usize = (index + 1).try_into().unwrap();
-            let to_slice: usize = (index + won_cards as i32).try_into().unwrap();
-            winings[from_slice..=to_slice].iter().enumerate().map(|(i, w)| 1 + count_cards((i + from_slice) as i32, *w, winings)).sum()
+            let from_slice = usize::try_from(index + 1).unwrap();
+            winings[from_slice..(from_slice + won_cards)]
+                .iter()
+                .enumerate()
+                .map(|(i, w)| 1 + count_cards((i + from_slice) as i32, *w, winings))
+                .sum()
         }
     }
 }
