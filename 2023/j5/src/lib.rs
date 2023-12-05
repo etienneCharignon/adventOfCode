@@ -8,11 +8,11 @@ lazy_static! {
     static ref VIDE: Regex = Regex::new(r"^$").unwrap();
 }
 
-pub fn read(alamnac: &str) -> (Vec<u64>, Vec<Vec<(u64, u64, u64)>>) {
+pub fn read(almanac: &str) -> (Vec<u64>, Vec<Vec<(u64, u64, u64)>>) {
     let mut seeds = vec![];
     let mut maps = Vec::<Vec<(u64, u64, u64)>>::new();
     let mut map = Vec::<(u64, u64, u64)>::new();
-    for line in alamnac.lines() {
+    for line in almanac.lines() {
         if line.starts_with("seeds") {
             seeds =  NUMBER.captures_iter(line).map(|cap| cap[0].parse::<u64>().unwrap()).collect::<Vec<_>>();
         }
@@ -52,6 +52,71 @@ pub fn find_locations(almanac: (Vec<u64>, Vec<Vec<(u64, u64, u64)>>)) -> Vec<u64
     almanac.0.iter().map(|seed| find_location(*seed, &almanac.1[0..])).collect()
 }
 
+pub fn find_minimum_location(almanac: (Vec<u64>, Vec<Vec<(u64, u64, u64)>>)) -> u64 {
+    // let locations: Vec<_> = almanac.0.chunks(2).map(|c| {
+        //(c[0]..(c[0]+c[1])).map(|seed| find_location(seed, &almanac.1[0..])).min().unwrap()
+    // }).collect();
+    let mut seeds = Vec::<(u64, u64)>::new();
+    let mut ranges = almanac.0.chunks(2).map(|c| (c[0], (c[0]+c[1]))).collect::<Vec<_>>();
+    ranges.sort_by(|r1, r2| r1.0.cmp(&r2.0));
+    let length =  ranges.iter().count();
+    for (i, range) in ranges.iter().enumerate() {
+        if i+1 < length && range.1 > ranges[i+1].0 {
+            println!("{:?}", range);
+        }
+    }
+/*    for range in ranges.iter() {
+        println!("{:?}", range);
+        if seeds.is_empty() {
+            seeds.push(*range);
+        }
+        else {
+            let mut new_seeds = Vec::<(u64, u64)>::new();
+            let mut merged = false;
+            for seed in seeds {
+                if merged {
+                    new_seeds.push(seed);
+                    continue;
+                }
+                if range.0 <= seed.0 {
+                    if range.1 >= seed.1 {
+                        new_seeds.push(*range);
+                        merged = true;
+                    }
+                    else if range.1 < seed.0 {
+                        new_seeds.push(seed);
+                    }
+                    else if range.1 >= seed.0 {
+                        new_seeds.push((range.0, seed.1));
+                        merged = true;
+                    }
+                }
+                else {
+                    if range.0 > seed.1 {
+                        new_seeds.push(seed);
+                    }
+                    else if range.1 >= seed.1 {
+                        new_seeds.push((seed.0, range.1));
+                        merged = true;
+                    }
+                    else {
+                        new_seeds.push(seed);
+                        merged = true;
+                    }
+                }
+            }
+            if !merged {
+                new_seeds.push(*range);
+            }
+            seeds = new_seeds;
+        }
+        println!("{:?}", seeds);
+    }*/
+    println!("{:?}", ranges); 
+    //*locations.iter().min().unwrap()
+    0
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -83,6 +148,17 @@ mod tests {
     #[test]
     fn it_find_locations_example() {
         assert_eq!(find_locations(read(inputs::EXAMPLE)), vec![82, 43, 86, 35]);
+    }
+
+    #[test]
+    #[ignore]
+    fn it_find_minimum_locations_example_part2() {
+        assert_eq!(find_minimum_location(read(inputs::EXAMPLE)), 46);
+    }
+
+    #[test]
+    fn it_find_minimum_locations_input_part2() {
+        assert_eq!(find_minimum_location(read(inputs::INPUT)), 46);
     }
 
     #[test]
