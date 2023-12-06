@@ -2,6 +2,7 @@ mod inputs;
 
 use lazy_static::lazy_static;
 use regex::Regex;
+use std::cmp;
 
 lazy_static! {
     static ref NUMBER: Regex = Regex::new(r"\d+").unwrap();
@@ -31,15 +32,6 @@ pub fn read(almanac: &str) -> (Vec<u64>, Vec<Vec<(u64, u64, u64)>>) {
     (seeds, maps)
 }
 
-pub fn map_value_r(value: u64, map: &Vec<(u64, u64, u64)>) -> u64 {
-    for row in map {
-        if (row.0..(row.0+row.2)).contains(&value) {
-            return row.1 + (value - row.0)
-        }
-    }
-    value
-}
-
 pub fn map_value(value: u64, map: &Vec<(u64, u64, u64)>) -> u64 {
     for row in map {
         if (row.1..(row.1+row.2)).contains(&value) {
@@ -62,25 +54,27 @@ pub fn find_locations(almanac: (Vec<u64>, Vec<Vec<(u64, u64, u64)>>)) -> Vec<u64
     almanac.0.iter().map(|seed| find_location(*seed, &almanac.1[0..])).collect()
 }
 
-pub fn intervals(map: &Vec<(u64, u64, u64)>) -> Vec<(u64, u64)> {
+pub fn intervals_map(map: &Vec<(u64, u64, u64)>) -> Vec<(u64, u64)> {
     let mut intervals = Vec::<(u64, u64)>::new();
     let mut s = 0;
     for row in map {
-        if s != row.0 {
-            intervals.push((s, row.0));
+        if s != row.1 && row.1 > 1 {
+            intervals.push((s, row.1 - 1));
         }
-        intervals.push((row.0, row.0 + row.2));
-        s = row.0 + row.2;
+        intervals.push((row.1, row.1 + row.2 - 1));
+        s = row.1 + row.2;
     }
+    intervals.push((s, std::u64::MAX));
     intervals
 }
 
-pub fn intersections(intervals: Vec<(u64, u64)>, map: &Vec<(u64, u64, u64)>) -> Vec<(u64, u64)> { 
-    let mut new_intervals = Vec::<(u64, u64)>::new();
-    for interval in intervals {
-        
+pub fn intersection(i1: (u64, u64), i2: (u64, u64)) -> Option<(u64, u64)> { 
+    if i2.0 > i1.1 || i1.0 > i2.1 {
+        None
     }
-    new_intervals
+    else {
+        Some((cmp::max(i1.0, i2.0), cmp::min(i1.1, i2.1)))
+    }
 }
 
 pub fn find_intervals(intervals: &Vec<(u64, u64)>, map: &Vec<(u64, u64, u64)>) -> Vec<(u64, u64)> {
@@ -88,70 +82,32 @@ pub fn find_intervals(intervals: &Vec<(u64, u64)>, map: &Vec<(u64, u64, u64)>) -
     let mut mapsorted = map.clone();
     mapsorted.sort_by(|r1, r2| r1.1.cmp(&r2.1));
     println!("{:?}", intervals); 
-    println!("{:?}", mapsorted); 
-    let mut itermap = mapsorted.iter();
-    let mut orull = itermap.next();
-    for interval in intervals {
-        if orull == None {
-            new_intervals.push(*interval);
-            continue;
-        }
-        let mut rull = orull.unwrap();
-        while interval.0 >= rull.1 + rull.2 {
-            orull = itermap.next();
-            if orull == None {
-                break;
-            }
-            rull = orull.unwrap();
-        }
-        if orull == None {
-            new_intervals.push(*interval);
-            continue;
-        }
-        while true {
-            if interval.0 < rull.1 && interval.1 >= rull.1 {
-                new_intervals.push((interval.0, rull.1));
-                if interval.1 > rull.1 {
-                    if rull.1 + rull.2 < interval.1 {
-                        new_intervals.push((rull.1, rull.1 + rull.2));
-                        new_intervals.push((rull.1 + rull.2, interval.1));
-                    }
-                    else {
-                        new_intervals.push((rull.1, interval.1));
-                    }
-                }
-            }
-            else if interval.0 < rull.1 + rull.2 && interval.1 >= rull.1 + rull.2 {
-                new_intervals.push((interval.0, rull.1 + rull.2));
-                if  interval.1 > rull.1 + rull.2 {
-                    new_intervals.push((rull.1 + rull.2, interval.1));
-                }
-            }
-            else if interval.0 > rull.1 {
-                new_intervals.push(*interval);
-            }
-            else if interval.1 < rull.1 {
-                new_intervals.push(*interval);
-                break;
-            }
-            orull = itermap.next();
-            if orull == None { break; }
-            rull = orull.unwrap();
-            if interval.1 < rull.1 { break; }
+    println!("map : {:?}", mapsorted); 
+    let map_intervals = intervals_map(&mapsorted);
+    println!("{:?}", map_intervals); 
+    for mi in map_intervals {
+        for i in intervals {
+            match intersection(mi, *i) {
+                Some(intersection) => new_intervals.push(intersection),
+                None => {}
+            };
         }
     }
-    new_intervals
+
+    println!("{:?}", new_intervals); 
+    new_intervals.iter().map(|i| (map_value(i.0, map), map_value(i.1, map))).collect()
 }
 
 pub fn find_minimum_location(almanac: (Vec<u64>, Vec<Vec<(u64, u64, u64)>>)) -> u64 {
-    let mut seeds = almanac.0.chunks(2).map(|c| (c[0], (c[0]+c[1]))).collect::<Vec<_>>();
+    let mut seeds = almanac.0.chunks(2).map(|c| (c[0], (c[0] + c[1] - 1))).collect::<Vec<_>>();
     seeds.sort_by(|r1, r2| r1.0.cmp(&r2.0));
     println!("{:?}", seeds); 
 
     let mut intervals: Vec<(u64, u64)> = seeds;
 
     for map in almanac.1 {
-        intervals = find_intervals(&mut intervals, &map)
+        intervals = find_intervals(&mut intervals, &map);
+        println!("{:?}\n", intervals); 
     }
 
     intervals.sort_by(|r1, r2| r1.0.cmp(&r2.0));
@@ -170,21 +126,26 @@ mod tests {
     #[test]
     fn it_find_intervals() {
         assert_eq!(find_intervals(&vec![(2, 4), (6, 8)], &vec![(5, 5, 2), (3, 3, 2)]),
-                   vec![(2, 3), (3, 4), (6, 7), (7, 8)]);
+                   vec![(2, 2), (3, 4), (6, 6), (7, 8)]);
         assert_eq!(find_intervals(&vec![(2, 4), (6, 8)], &vec![(9, 9, 2)]),
                    vec![(2, 4), (6, 8)]);
         assert_eq!(find_intervals(&vec![(2, 4), (6, 8)], &vec![(0, 0, 2)]),
                    vec![(2, 4), (6, 8)]);
         assert_eq!(find_intervals(&vec![(2, 4), (6, 8)], &vec![(8, 8, 2)]),
-                   vec![(2, 4), (6, 8)]);
+                   vec![(2, 4), (6, 7), (8, 8)]);
         assert_eq!(find_intervals(&vec![(2, 8)], &vec![(3, 3, 2)]),
-                   vec![(2, 3), (3, 5), (5, 8)]);
+                   vec![(2, 2), (3, 4), (5, 8)]);
         assert_eq!(find_intervals(&vec![(2, 8)], &vec![(1, 1, 10)]),
                    vec![(2, 8)]);
         assert_eq!(find_intervals(&vec![(2, 11)], &vec![(1, 1, 10)]),
-                   vec![(2, 11)]);
+                   vec![(2, 10), (11, 11)]);
         assert_eq!(find_intervals(&vec![(1, 20)], &vec![(1, 1, 10), (11, 11, 5) ]),
-                   vec![(1, 11), (11, 16), (16, 20)]);
+                   vec![(1, 10), (11, 15), (16, 20)]);
+    }
+
+    #[test]
+    fn it_compute_map_interval() {
+        assert_eq!(intervals_map(&vec![(52, 50, 48), (50, 98, 2)]), [(0, 49), (50, 97), (98, 99), (100, 18446744073709551615)]);
     }
 
     #[test]
@@ -217,15 +178,13 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn it_find_minimum_locations_example_part2() {
         assert_eq!(find_minimum_location(read(inputs::EXAMPLE)), 46);
     }
 
     #[test]
-    #[ignore]
     fn it_find_minimum_locations_input_part2() {
-        assert_eq!(find_minimum_location(read(inputs::INPUT)), 46);
+        assert_eq!(find_minimum_location(read(inputs::INPUT)), 125742456);
     }
 
     #[test]
