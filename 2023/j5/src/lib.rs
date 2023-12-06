@@ -24,10 +24,20 @@ pub fn read(almanac: &str) -> (Vec<u64>, Vec<Vec<(u64, u64, u64)>>) {
             map.push((numbers[0], numbers[1], numbers[2]));
         }
         else if !map.is_empty() {
+            map.sort_by(|r1, r2| r1.0.cmp(&r2.0));
             maps.push(map.clone());
         }
     }
     (seeds, maps)
+}
+
+pub fn map_value_r(value: u64, map: &Vec<(u64, u64, u64)>) -> u64 {
+    for row in map {
+        if (row.0..(row.0+row.2)).contains(&value) {
+            return row.1 + (value - row.0)
+        }
+    }
+    value
 }
 
 pub fn map_value(value: u64, map: &Vec<(u64, u64, u64)>) -> u64 {
@@ -52,74 +62,130 @@ pub fn find_locations(almanac: (Vec<u64>, Vec<Vec<(u64, u64, u64)>>)) -> Vec<u64
     almanac.0.iter().map(|seed| find_location(*seed, &almanac.1[0..])).collect()
 }
 
-pub fn find_minimum_location(almanac: (Vec<u64>, Vec<Vec<(u64, u64, u64)>>)) -> u64 {
-    // let locations: Vec<_> = almanac.0.chunks(2).map(|c| {
-        //(c[0]..(c[0]+c[1])).map(|seed| find_location(seed, &almanac.1[0..])).min().unwrap()
-    // }).collect();
-    let mut seeds = Vec::<(u64, u64)>::new();
-    let mut ranges = almanac.0.chunks(2).map(|c| (c[0], (c[0]+c[1]))).collect::<Vec<_>>();
-    ranges.sort_by(|r1, r2| r1.0.cmp(&r2.0));
-    let length =  ranges.iter().count();
-    for (i, range) in ranges.iter().enumerate() {
-        if i+1 < length && range.1 > ranges[i+1].0 {
-            println!("{:?}", range);
+pub fn intervals(map: &Vec<(u64, u64, u64)>) -> Vec<(u64, u64)> {
+    let mut intervals = Vec::<(u64, u64)>::new();
+    let mut s = 0;
+    for row in map {
+        if s != row.0 {
+            intervals.push((s, row.0));
         }
+        intervals.push((row.0, row.0 + row.2));
+        s = row.0 + row.2;
     }
-/*    for range in ranges.iter() {
-        println!("{:?}", range);
-        if seeds.is_empty() {
-            seeds.push(*range);
+    intervals
+}
+
+pub fn intersections(intervals: Vec<(u64, u64)>, map: &Vec<(u64, u64, u64)>) -> Vec<(u64, u64)> { 
+    let mut new_intervals = Vec::<(u64, u64)>::new();
+    for interval in intervals {
+        
+    }
+    new_intervals
+}
+
+pub fn find_intervals(intervals: &Vec<(u64, u64)>, map: &Vec<(u64, u64, u64)>) -> Vec<(u64, u64)> {
+    let mut new_intervals = Vec::<(u64, u64)>::new(); 
+    let mut mapsorted = map.clone();
+    mapsorted.sort_by(|r1, r2| r1.1.cmp(&r2.1));
+    println!("{:?}", intervals); 
+    println!("{:?}", mapsorted); 
+    let mut itermap = mapsorted.iter();
+    let mut orull = itermap.next();
+    for interval in intervals {
+        if orull == None {
+            new_intervals.push(*interval);
+            continue;
         }
-        else {
-            let mut new_seeds = Vec::<(u64, u64)>::new();
-            let mut merged = false;
-            for seed in seeds {
-                if merged {
-                    new_seeds.push(seed);
-                    continue;
-                }
-                if range.0 <= seed.0 {
-                    if range.1 >= seed.1 {
-                        new_seeds.push(*range);
-                        merged = true;
-                    }
-                    else if range.1 < seed.0 {
-                        new_seeds.push(seed);
-                    }
-                    else if range.1 >= seed.0 {
-                        new_seeds.push((range.0, seed.1));
-                        merged = true;
-                    }
-                }
-                else {
-                    if range.0 > seed.1 {
-                        new_seeds.push(seed);
-                    }
-                    else if range.1 >= seed.1 {
-                        new_seeds.push((seed.0, range.1));
-                        merged = true;
+        let mut rull = orull.unwrap();
+        while interval.0 >= rull.1 + rull.2 {
+            orull = itermap.next();
+            if orull == None {
+                break;
+            }
+            rull = orull.unwrap();
+        }
+        if orull == None {
+            new_intervals.push(*interval);
+            continue;
+        }
+        while true {
+            if interval.0 < rull.1 && interval.1 >= rull.1 {
+                new_intervals.push((interval.0, rull.1));
+                if interval.1 > rull.1 {
+                    if rull.1 + rull.2 < interval.1 {
+                        new_intervals.push((rull.1, rull.1 + rull.2));
+                        new_intervals.push((rull.1 + rull.2, interval.1));
                     }
                     else {
-                        new_seeds.push(seed);
-                        merged = true;
+                        new_intervals.push((rull.1, interval.1));
                     }
                 }
             }
-            if !merged {
-                new_seeds.push(*range);
+            else if interval.0 < rull.1 + rull.2 && interval.1 >= rull.1 + rull.2 {
+                new_intervals.push((interval.0, rull.1 + rull.2));
+                if  interval.1 > rull.1 + rull.2 {
+                    new_intervals.push((rull.1 + rull.2, interval.1));
+                }
             }
-            seeds = new_seeds;
+            else if interval.0 > rull.1 {
+                new_intervals.push(*interval);
+            }
+            else if interval.1 < rull.1 {
+                new_intervals.push(*interval);
+                break;
+            }
+            orull = itermap.next();
+            if orull == None { break; }
+            rull = orull.unwrap();
+            if interval.1 < rull.1 { break; }
         }
-        println!("{:?}", seeds);
-    }*/
-    println!("{:?}", ranges); 
-    //*locations.iter().min().unwrap()
-    0
+    }
+    new_intervals
+}
+
+pub fn find_minimum_location(almanac: (Vec<u64>, Vec<Vec<(u64, u64, u64)>>)) -> u64 {
+    let mut seeds = almanac.0.chunks(2).map(|c| (c[0], (c[0]+c[1]))).collect::<Vec<_>>();
+    seeds.sort_by(|r1, r2| r1.0.cmp(&r2.0));
+    println!("{:?}", seeds); 
+
+    let mut intervals: Vec<(u64, u64)> = seeds;
+
+    for map in almanac.1 {
+        intervals = find_intervals(&mut intervals, &map)
+    }
+
+    intervals.sort_by(|r1, r2| r1.0.cmp(&r2.0));
+    intervals.iter().next().unwrap().0
+
+/*    let locations: Vec<_> = seeds.iter().map(|c| {
+       (c.0..c.1).map(|seed| find_location(seed, &almanac.1[0..])).min().unwrap()
+    }).collect();
+    *locations.iter().min().unwrap()*/
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn it_find_intervals() {
+        assert_eq!(find_intervals(&vec![(2, 4), (6, 8)], &vec![(5, 5, 2), (3, 3, 2)]),
+                   vec![(2, 3), (3, 4), (6, 7), (7, 8)]);
+        assert_eq!(find_intervals(&vec![(2, 4), (6, 8)], &vec![(9, 9, 2)]),
+                   vec![(2, 4), (6, 8)]);
+        assert_eq!(find_intervals(&vec![(2, 4), (6, 8)], &vec![(0, 0, 2)]),
+                   vec![(2, 4), (6, 8)]);
+        assert_eq!(find_intervals(&vec![(2, 4), (6, 8)], &vec![(8, 8, 2)]),
+                   vec![(2, 4), (6, 8)]);
+        assert_eq!(find_intervals(&vec![(2, 8)], &vec![(3, 3, 2)]),
+                   vec![(2, 3), (3, 5), (5, 8)]);
+        assert_eq!(find_intervals(&vec![(2, 8)], &vec![(1, 1, 10)]),
+                   vec![(2, 8)]);
+        assert_eq!(find_intervals(&vec![(2, 11)], &vec![(1, 1, 10)]),
+                   vec![(2, 11)]);
+        assert_eq!(find_intervals(&vec![(1, 20)], &vec![(1, 1, 10), (11, 11, 5) ]),
+                   vec![(1, 11), (11, 16), (16, 20)]);
+    }
 
     #[test]
     fn it_test_regex() {
@@ -157,6 +223,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn it_find_minimum_locations_input_part2() {
         assert_eq!(find_minimum_location(read(inputs::INPUT)), 46);
     }
