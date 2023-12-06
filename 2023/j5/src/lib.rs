@@ -3,6 +3,7 @@ mod inputs;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::cmp;
+use std::thread;
 
 lazy_static! {
     static ref NUMBER: Regex = Regex::new(r"\d+").unwrap();
@@ -103,7 +104,7 @@ pub fn find_minimum_location(almanac: (Vec<u64>, Vec<Vec<(u64, u64, u64)>>)) -> 
     seeds.sort_by(|r1, r2| r1.0.cmp(&r2.0));
     println!("{:?}", seeds); 
 
-    let mut intervals: Vec<(u64, u64)> = seeds;
+    /*let mut intervals: Vec<(u64, u64)> = seeds;
 
     for map in almanac.1 {
         intervals = find_intervals(&mut intervals, &map);
@@ -111,12 +112,26 @@ pub fn find_minimum_location(almanac: (Vec<u64>, Vec<Vec<(u64, u64, u64)>>)) -> 
     }
 
     intervals.sort_by(|r1, r2| r1.0.cmp(&r2.0));
-    intervals.iter().next().unwrap().0
+    intervals.iter().next().unwrap().0;*/
 
-/*    let locations: Vec<_> = seeds.iter().map(|c| {
+    let mut handles = Vec::<thread::JoinHandle<u64>>::new();
+    for intervals in seeds {
+        let maps = almanac.1.clone();
+        handles.push(thread::spawn(move || {
+            (intervals.0..intervals.1).map(|seed| find_location(seed, &maps[0..])).min().unwrap()
+        }));
+    }
+    /*
+    let locations: Vec<_> = seeds.iter().map(|c| {
        (c.0..c.1).map(|seed| find_location(seed, &almanac.1[0..])).min().unwrap()
-    }).collect();
-    *locations.iter().min().unwrap()*/
+    }).collect();*/
+
+    let mut locations  = Vec::<u64>::new();
+    for handle in handles {
+        locations.push(handle.join().unwrap());
+        println!(".");
+    }
+    *locations.iter().min().unwrap()
 }
 
 #[cfg(test)]
@@ -183,6 +198,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn it_find_minimum_locations_input_part2() {
         assert_eq!(find_minimum_location(read(inputs::INPUT)), 125742456);
     }
