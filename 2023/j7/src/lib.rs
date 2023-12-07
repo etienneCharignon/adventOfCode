@@ -8,7 +8,7 @@ pub fn card(c: char) -> i32 {
         'A' => 14,
         'K' => 13,
         'Q' => 12,
-        'J' => 11,
+        'J' => 1,
         'T' => 10,
         _ => (c.to_string()).parse::<i32>().unwrap()
     }
@@ -16,7 +16,12 @@ pub fn card(c: char) -> i32 {
 
 pub fn type_hand(hand: &Vec<i32>) -> i32 {
     let mut map = HashMap::new();
+    let mut number_of_j =  0;
     for c in hand {
+        if *c == 1 {
+            number_of_j += 1;
+            continue;
+        }
         if map.contains_key(c) {
             map.insert(*c, map[c] + 1);
         }
@@ -24,25 +29,28 @@ pub fn type_hand(hand: &Vec<i32>) -> i32 {
             map.insert(*c, 1);
         }
     }
+    println!("{:?}", map);
     let mut duplicates: Vec<&i32> = map.values().collect();
     duplicates.sort_by(|a, b| b.cmp(a));
     println!("{:?}", duplicates);
-    if *duplicates[0] == 5 {
+    let first = if duplicates.len() > 0 { *duplicates[0] + number_of_j } else { number_of_j };
+    println!("{:?}", first);
+    if first == 5 {
         6
     }
-    else if *duplicates[0] == 4 {
+    else if first == 4 {
         5
     }
-    else if *duplicates[0] == 3 && *duplicates[1] == 2 {
+    else if first == 3 && *duplicates[1] == 2 {
         4
     }
-    else if *duplicates[0] == 3 {
+    else if first == 3 {
         3
     }
-    else if *duplicates[0] == 2 && *duplicates[1] == 2 {
+    else if first == 2 && *duplicates[1] == 2 {
         2
     }
-    else if *duplicates[0] == 2 {
+    else if first == 2 {
         1
     }
     else { 0 }
@@ -82,6 +90,7 @@ mod tests {
 
     #[test]
     fn it_read_type_hand() {
+        assert_eq!(type_hand(&parse_hand("T55J5")), 5);
         assert_eq!(type_hand(&parse_hand("22222")), 6);
         assert_eq!(type_hand(&parse_hand("22227")), 5);
         assert_eq!(type_hand(&parse_hand("22277")), 4);
@@ -101,11 +110,11 @@ mod tests {
 
     #[test]
     fn it_solve_example() {
-        assert_eq!(winings(inputs::EXAMPLE), 6440);
+        assert_eq!(winings(inputs::EXAMPLE), 5905);
     }
 
     #[test]
     fn it_solve_input() {
-        assert_eq!(winings(inputs::INPUT), 250453939);
+        assert_eq!(winings(inputs::INPUT), 248652697);
     }
 }
