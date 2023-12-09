@@ -25,12 +25,12 @@ pub fn find_next(mesure: &Vec<i64>) -> i64 {
     let mut next = 0;
     for iteration in iterations.iter().rev() {
         println!("{:?}", iteration);
-        next = next + *iteration.iter().last().unwrap();
+        next = iteration[0] - next;
     }
     next
 }
 
-pub fn solve_p1(input: &str) -> i64 {
+pub fn solve_p2(input: &str) -> i64 {
     let mesures: Vec<Vec<i64>> = read(input);
     println!("{:?}", mesures);
     mesures.iter().map(|mesure| find_next(&mesure)).sum()
@@ -42,18 +42,18 @@ mod tests {
 
     #[test]
     fn it_find_next() {
-        assert_eq!(find_next(&vec![0, 3, 6, 9, 12, 15]), 18);
+        assert_eq!(find_next(&vec![0, 3, 6, 9, 12, 15]), -3);
         assert_eq!(find_next(&vec![3, 3, 3, 3, 3]), 3);
         assert_eq!(find_next(&vec![0, 0, 0, 0]), 0);
     }
 
     #[test]
     fn it_solve_example() {
-        assert_eq!(solve_p1(inputs::EXAMPLE), 114);
+        assert_eq!(solve_p2(inputs::EXAMPLE), 2);
     }
 
     #[test]
     fn it_solve_input() {
-        assert_eq!(solve_p1(inputs::INPUT), 1972648895);
+        assert_eq!(solve_p2(inputs::INPUT), 919);
     }
 }
