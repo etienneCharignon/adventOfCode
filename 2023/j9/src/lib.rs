@@ -4,15 +4,15 @@ pub fn read(input: &str) -> Vec<Vec<i64>> {
     input.lines().map(|l| l.split_whitespace().map(|n| n.parse::<i64>().unwrap()).collect()).collect()
 }
 
-pub fn diffs(mesure: &Vec<i64>) -> Vec<i64> {
+pub fn diffs(mesure: &[i64]) -> Vec<i64> {
     let mut diffs = Vec::<i64>::new();
-    for i in 0..(mesure.iter().count() - 1) {
+    for i in 0..(mesure.len() - 1) {
         diffs.push(mesure[i+1] - mesure[i])
     }
     diffs
 }
 
-pub fn find_previous(mesure: &Vec<i64>) -> i64 {
+pub fn find_previous(mesure: &[i64]) -> i64 {
     if mesure.iter().all(|m| *m == 0) {
         0
     } else {
