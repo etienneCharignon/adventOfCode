@@ -73,51 +73,54 @@ pub fn solve_p1(start_tile: char, world: &Vec<Vec<char>>) -> usize {
     find_path(start_tile, world).iter().count() / 2
 }
 
-pub fn find_outside_neighbours(p: (usize, usize), path: &HashSet<(usize, usize)>, height: i64, width: i64, world: &Vec<Vec<char>>) -> Vec<(usize, usize)>{
-    let mut neighbours = Vec::<(usize, usize)>::new();
-    let px: i64 = p.0.try_into().unwrap();
-    let py: i64 = p.1.try_into().unwrap();
-    let is_on_path = path.contains(&p);
-    for x in (px - 1)..=(px + 1) {
-        for y in (py - 1)..=(py + 1) {
-            if x < 0 { continue; }
-            if x >= width { continue; }
-            if y < 0 { continue; }
-            if y >= height { continue; }
-            if x == px && y == py { continue; }
-            if path.contains(&(x as usize, y as usize)) { continue; }
-
-            neighbours.push((x as usize, y as usize))
-        }
-    }
-    neighbours
-}
-
 pub fn solve_p2(start_tile: char, world: &Vec<Vec<char>>) -> i64 {
-    let path = find_path(start_tile, world);
-
     let height: i64 = world.iter().count().try_into().unwrap();
     let width: i64 = world.iter().next().unwrap().len().try_into().unwrap();
-    let mut outside = HashSet::<(usize, usize)>::new();
-    let mut open_set = HashSet::<(usize,usize)>::new();
-    open_set.insert((0,0));
-    loop {
-        let current = match open_set.iter().next() {
-            Some(point) => *point,
-            None => break
-        };
-        open_set.remove(&current);
-        outside.insert(current);
-        let neighbours = find_outside_neighbours(current, &path, height, width, world);
-        for n in neighbours {
-            if !outside.contains(&n) { open_set.insert(n); }
+    let start = find_start(world).unwrap();
+
+    let path = find_path(start_tile, world);
+    let mut count_inside = 0;
+
+    let mut is_inside = false;
+    let mut is_on_path = false;
+
+    let mut last_turn:char = ' ';
+
+    for r in 0..height as usize {
+        for c in 0..width as usize {
+            let current_tile = if (c,r) == start { start_tile } else { world[r][c] };
+            if path.contains(&(c, r)) {
+                if current_tile == '|' {
+                    is_inside = ! is_inside;
+                }
+                else if current_tile == '-' {
+
+                }
+                else {
+                    if !is_on_path {
+                        last_turn = current_tile;
+                        is_on_path = true;
+                    }
+                    else {
+                        if (last_turn == 'L' && current_tile == '7') || 
+                            (last_turn == 'F' && current_tile == 'J')
+                         {
+                            is_inside = ! is_inside; 
+                        }
+                        is_on_path = false;
+                    }
+                }
+            }
+            else {
+                is_on_path = false;
+                if is_inside {
+                    println!("{:?}", (c,r));
+                    count_inside += 1;
+                }
+            }
         }
     }
-    println!("{:?}", height);
-    println!("{:?}", width);
-    println!("{:?}", path.iter().count());
-    println!("{:?}", outside.iter().count());
-    (height * width) - outside.iter().count() as i64
+    count_inside
 }
 
 #[cfg(test)]
@@ -140,14 +143,18 @@ mod tests {
     }
 
     #[test]
+    fn it_solve_example4_p2() {
+        assert_eq!(solve_p2('7', &read(inputs::EXAMPLE4)), 10);
+    }
+
+    #[test]
     #[ignore]
     fn it_solve_input() {
         assert_eq!(solve_p1('|', &read(inputs::INPUT)), 7086);
     }
 
     #[test]
-    #[ignore]
     fn it_solve_p2_input() {
-        assert_eq!(solve_p2('|', &read(inputs::INPUT)), 1645); // to high
+        assert_eq!(solve_p2('|', &read(inputs::INPUT)), 317); //1645 to high
     }
 }
