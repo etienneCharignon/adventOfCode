@@ -5,7 +5,7 @@ pub fn read(input: &str) -> Vec<Vec<char>> {
     input.lines().map(|l| l.chars().collect()).collect()
 }
 
-pub fn expension_from<X>(galaxies: &Vec<(usize, usize)>, size: usize, x: X) -> Vec<usize> 
+pub fn expension_from<X>(factor: usize, galaxies: &Vec<(usize, usize)>, size: usize, x: X) -> Vec<usize> 
 where
     X: Fn(&(usize, usize)) -> usize,
 {
@@ -14,7 +14,7 @@ where
     let mut expension = 0;
     for v in 0..size {
         if ! presences_v.contains(&v) {
-            expension += 1;
+            expension += factor - 1;
         }
         expension_v.push(expension);
     }
@@ -29,9 +29,9 @@ pub fn distance(g1: (usize, usize), g2: (usize, usize), expension_c: &[usize], e
     diff(g2.0 + expension_c[g2.0], g1.0 + expension_c[g1.0]) + diff(g2.1 + expension_r[g2.1], g1.1 + expension_r[g1.1])
 }
 
-pub fn solve_p1(world: Vec<Vec<char>>) -> usize {
-    let height: usize = world.len();
-    let width: usize = world.iter().next().unwrap().len();
+pub fn solve(world: Vec<Vec<char>>, factor: usize) -> usize {
+    let height = world.len();
+    let width = world.iter().next().unwrap().len();
     let mut galaxies: Vec<(usize, usize)> = vec![];
     for r in 0..height {
         for c in 0..width {
@@ -40,8 +40,8 @@ pub fn solve_p1(world: Vec<Vec<char>>) -> usize {
             }
         }
     }
-    let mut expension_c = expension_from(&galaxies, width, |g| g.0);
-    let mut expension_r = expension_from(&galaxies, height, |g| g.1);
+    let expension_c = expension_from(factor, &galaxies, width, |g| g.0);
+    let expension_r = expension_from(factor, &galaxies, height, |g| g.1);
     println!("{:?}", expension_c);
     println!("{:?}", expension_r);
     println!("{:?}", galaxies);
@@ -66,7 +66,9 @@ mod tests {
 
     #[test]
     fn it_works() {
-        assert_eq!(solve_p1(read(inputs::EXAMPLE)), 374);
-        assert_eq!(solve_p1(read(inputs::INPUT)), 10231178);
+        assert_eq!(solve(read(inputs::INPUT), 1000000), 622120986954);
+        assert_eq!(solve(read(inputs::EXAMPLE), 100), 8410);
+        assert_eq!(solve(read(inputs::EXAMPLE), 10), 1030);
+        assert_eq!(solve(read(inputs::EXAMPLE), 2), 374);
     }
 }
