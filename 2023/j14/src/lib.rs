@@ -24,8 +24,8 @@ pub fn read(input: &str, type_rock: char) -> Vec<(usize, usize)> {
 pub fn find_closest_rock(b: (usize, usize), rocks: &Vec<(usize, usize)>, size: (usize, usize)) -> usize {
     let (height, width) = size;
     match rocks.iter().filter(|r| r.0 == b.0 && r.1 < b.1).map(|r| r.1).max() {
-        Some(max_rock_y) => height - max_rock_y - 1,
-        None => height
+        Some(max_rock_y) => max_rock_y + 1,
+        None => 0
     }
 }
 
@@ -38,7 +38,14 @@ pub fn solve(rocks: &Vec<(usize, usize)>, balls: &Vec<(usize,usize)>, size: (usi
         println!("{b:?} {pos}");
     }
     println!("{stacks:?}");
-    stacks.iter_all().map(|(k, v)| ((k.1 - v.len() + 1)..=k.1).into_iter().sum::<usize>()).sum()
+    let mut new_balls = Vec::<(usize, usize)>::new();
+    for (p, l) in stacks.iter_all() {
+        for i in 0..l.len() {
+            new_balls.push((p.0, p.1 + i))
+        }
+    }
+    println!("{new_balls:?}");
+    new_balls.iter().map(|b| size.0 - b.1).sum()
 }
 
 #[cfg(test)]
