@@ -39,7 +39,7 @@ pub fn count_energised(start: ((i32, i32),(i32, i32)), input: &Vec<Vec<char>>) -
                 (-1, 0) => (0, -1),
                 (0, 1) => (1, 0),
                 (0, -1) => (-1, 0),
-                _ => panic!("imposible direction")
+                _ => panic!("impossible direction")
             };
             heads.push((new_pos, new_direction));
         }
@@ -49,7 +49,7 @@ pub fn count_energised(start: ((i32, i32),(i32, i32)), input: &Vec<Vec<char>>) -
                 (-1, 0) => (0, 1),
                 (0, 1) => (-1, 0),
                 (0, -1) => (1, 0),
-                _ => panic!("imposible direction")
+                _ => panic!("impossible direction")
             };
             heads.push((new_pos, new_direction));
         }
@@ -82,6 +82,10 @@ pub fn count_max_energised(input: &Vec<Vec<char>>) -> usize {
     for x in 0i32..width {
         energized.push(count_energised(((x, -1),(0, 1)), input));
         energized.push(count_energised(((x, height),(0, -1)), input));
+    }
+    for y in 0i32..height {
+        energized.push(count_energised(((-1, y),(1, 0)), input));
+        energized.push(count_energised(((width, y),(-1, 0)), input));
     }
     *energized.iter().max().unwrap()
 }
