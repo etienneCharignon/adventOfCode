@@ -1,5 +1,10 @@
 mod inputs;
 
+use std::collections::HashSet;
+use std::collections::HashMap;
+use std::collections::BinaryHeap;
+use std::cmp::Reverse;
+
 #[derive(Debug, PartialEq, Copy, Clone, Hash, Eq)]
 pub struct Point(pub i32, pub i32);
 
@@ -10,8 +15,17 @@ pub struct Node {
     pub c: usize,
 }
 
-use std::collections::HashSet;
-use std::collections::HashMap;
+impl PartialOrd for Node {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Node {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        other.p.0.cmp(&self.p.0)
+    }
+}
 
 pub fn read(input: &str) -> Vec<Vec<i32>> {
     input.lines().map(|l| l.chars().map(|c| String::from(c).parse::<i32>().unwrap()).collect()).collect()
@@ -111,7 +125,8 @@ pub fn find_path(start: Node, goal: Point, map: &Vec<Vec<i32>>) -> i32
 {
     let height = map.len() as i32;
     let width = map[0].len() as i32;
-    let mut open_set = HashSet::from([start]);
+    let mut open_set = BinaryHeap::new(); // HashSet::from([start]);
+    open_set.push(Reverse((0, start)));
     let mut closed_set = HashSet::new();
     let mut came_from: HashMap<Node, Node> = HashMap::new();
 
@@ -120,22 +135,23 @@ pub fn find_path(start: Node, goal: Point, map: &Vec<Vec<i32>>) -> i32
 
     let mut ends = Vec::<Node>::new();
     while !open_set.is_empty() {
-        let current = smallest(&open_set, &gscore);
+        let Reverse((score, current)) = open_set.pop().unwrap(); //smallest(&open_set, &gscore);
         //print_set(&open_set, width, height);
-        open_set.remove(&current);
+        // open_set.remove(&current);
         if current.p == goal && current.c >= 4 {
             // let path = reconstruct_path(&came_from, current);
             // println!("{}", gscore.get(&current).unwrap());
             // print_path(&path, width, height);
-            ends.push(current);
-            continue;
+            return *gscore.get(&current).unwrap();
+            // ends.push(current);
+            // continue;
         }
         for neighbor in next_possibles(current, height, width) {
             let tentative_gscore = gscore.get(&current).unwrap() + map[neighbor.p.1 as usize][neighbor.p.0 as usize];
             if ! closed_set.contains(&neighbor) && tentative_gscore < gscore.get(&neighbor).cloned().unwrap_or(i32::MAX) {
                 came_from.insert(neighbor, current);
                 gscore.insert(neighbor, tentative_gscore);
-                open_set.insert(neighbor);
+                open_set.push(Reverse((tentative_gscore, neighbor)));
             }
         }
         closed_set.insert(current);
