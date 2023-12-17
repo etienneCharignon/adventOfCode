@@ -44,22 +44,24 @@ pub fn turn_left(d: Point) -> Point {
 pub fn next_possibles(n: Node, height: i32, width: i32) -> Vec<Node> {
     let mut list = vec![];
 
-    if n.c < 3 {
+    if n.c < 10 {
         let new_point = add(n.p, n.direction);
         if new_point.0 >= 0 && new_point.0 < width && new_point.1 >= 0 && new_point.1 < height {
             list.push(Node { p: new_point, direction: n.direction, c: n.c + 1 } );
         }
     }
-    let right = turn_right(n.direction);
-    let new_point = add(n.p, right);
-    if new_point.0 >= 0 && new_point.0 < width && new_point.1 >= 0 && new_point.1 < height {
-        list.push(Node { p: new_point, direction: right, c: 1 } );
-    }
+    if n.c >= 4 {
+        let right = turn_right(n.direction);
+        let new_point = add(n.p, right);
+        if new_point.0 >= 0 && new_point.0 < width && new_point.1 >= 0 && new_point.1 < height {
+            list.push(Node { p: new_point, direction: right, c: 1 } );
+        }
 
-    let left = turn_left(n.direction);
-    let new_pointl = add(n.p, left);
-    if new_pointl.0 >= 0 && new_pointl.0 < width && new_pointl.1 >= 0 && new_pointl.1 < height {
-        list.push(Node { p: new_pointl, direction: left, c: 1 } );
+        let left = turn_left(n.direction);
+        let new_pointl = add(n.p, left);
+        if new_pointl.0 >= 0 && new_pointl.0 < width && new_pointl.1 >= 0 && new_pointl.1 < height {
+            list.push(Node { p: new_pointl, direction: left, c: 1 } );
+        }
     }
     list
 }
@@ -85,9 +87,9 @@ pub fn reconstruct_path(came_from: &HashMap<Node, Node>, start: Node) -> Vec<Nod
 
 pub fn print_path(path: &Vec<Node>, width: i32, height: i32) {
     let points: Vec<_> = path.iter().map(|n| n.p).collect();
-    for x in 0..width {
+    for y in 0..height {
         let mut row = String::new();
-        for y in 0..height {
+        for x in 0..width {
             if points.contains(&Point(x,y)) {
                 row.push_str(&path[path.iter().position(|n| n.p == Point(x,y)).unwrap()].c.to_string());
             }
@@ -110,6 +112,7 @@ pub fn find_path(start: Node, goal: Point, map: &Vec<Vec<i32>>) -> i32
     let height = map.len() as i32;
     let width = map[0].len() as i32;
     let mut open_set = HashSet::from([start]);
+    let mut closed_set = HashSet::new();
     let mut came_from: HashMap<Node, Node> = HashMap::new();
 
     let mut gscore: HashMap<Node, i32> =HashMap::new();
@@ -118,17 +121,18 @@ pub fn find_path(start: Node, goal: Point, map: &Vec<Vec<i32>>) -> i32
     let mut ends = Vec::<Node>::new();
     while !open_set.is_empty() {
         let current = smallest(&open_set, &gscore);
-        // print_set(&open_set, width, height);
+        //print_set(&open_set, width, height);
         open_set.remove(&current);
-        if current.p == goal {
+        if current.p == goal && current.c >= 4 {
             let path = reconstruct_path(&came_from, current);
+            println!("{}", gscore.get(&current).unwrap());
             print_path(&path, width, height);
             ends.push(current);
             continue;
         }
         for neighbor in next_possibles(current, height, width) {
             let tentative_gscore = gscore.get(&current).unwrap() + map[neighbor.p.1 as usize][neighbor.p.0 as usize];
-            if tentative_gscore < gscore.get(&neighbor).cloned().unwrap_or(i32::MAX) {
+            if ! closed_set.contains(neighbor) && tentative_gscore < gscore.get(&neighbor).cloned().unwrap_or(i32::MAX) {
                 came_from.insert(neighbor, current);
                 gscore.insert(neighbor, tentative_gscore);
                 open_set.insert(neighbor);
@@ -140,10 +144,9 @@ pub fn find_path(start: Node, goal: Point, map: &Vec<Vec<i32>>) -> i32
 }  
 
 pub fn find_minimum_heat_lost_path(map: &Vec<Vec<i32>>) -> i32 {
-    let score = find_path(Node { p: Point(0, 0), direction: Point(1, 0), c: 1 }, 
-             Point(map.len() as i32 - 1, map[0].len() as i32 - 1),
-             map);
-    score
+    find_path(Node { p: Point(0, 0), direction: Point(1, 0), c: 1 }, 
+             Point(map[0].len() as i32 - 1, map.len() as i32 - 1),
+             map)
 }
 
 #[cfg(test)]
@@ -152,7 +155,8 @@ mod tests {
 
     #[test]
     fn it_works() {
-        assert_eq!(find_minimum_heat_lost_path(&read(inputs::EXAMPLE)), 102);
-        // assert_eq!(find_minimum_heat_lost_path(&read(inputs::INPUT)), 936);
+        assert_eq!(find_minimum_heat_lost_path(&read(inputs::EXAMPLE2)), 71);
+        assert_eq!(find_minimum_heat_lost_path(&read(inputs::EXAMPLE)), 94);
+        // assert_eq!(find_minimum_heat_lost_path(&read(inputs::INPUT)), 1157);
     }
 }
