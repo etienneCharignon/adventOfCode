@@ -124,20 +124,21 @@ pub fn find_path(start: Node, goal: Point, map: &Vec<Vec<i32>>) -> i32
         //print_set(&open_set, width, height);
         open_set.remove(&current);
         if current.p == goal && current.c >= 4 {
-            let path = reconstruct_path(&came_from, current);
-            println!("{}", gscore.get(&current).unwrap());
-            print_path(&path, width, height);
+            // let path = reconstruct_path(&came_from, current);
+            // println!("{}", gscore.get(&current).unwrap());
+            // print_path(&path, width, height);
             ends.push(current);
             continue;
         }
         for neighbor in next_possibles(current, height, width) {
             let tentative_gscore = gscore.get(&current).unwrap() + map[neighbor.p.1 as usize][neighbor.p.0 as usize];
-            if ! closed_set.contains(neighbor) && tentative_gscore < gscore.get(&neighbor).cloned().unwrap_or(i32::MAX) {
+            if ! closed_set.contains(&neighbor) && tentative_gscore < gscore.get(&neighbor).cloned().unwrap_or(i32::MAX) {
                 came_from.insert(neighbor, current);
                 gscore.insert(neighbor, tentative_gscore);
                 open_set.insert(neighbor);
             }
         }
+        closed_set.insert(current);
     }
 
     *ends.iter().map(|n| gscore.get(n).unwrap()).min().unwrap()
@@ -157,6 +158,6 @@ mod tests {
     fn it_works() {
         assert_eq!(find_minimum_heat_lost_path(&read(inputs::EXAMPLE2)), 71);
         assert_eq!(find_minimum_heat_lost_path(&read(inputs::EXAMPLE)), 94);
-        // assert_eq!(find_minimum_heat_lost_path(&read(inputs::INPUT)), 1157);
+        assert_eq!(find_minimum_heat_lost_path(&read(inputs::INPUT)), 1157);
     }
 }
