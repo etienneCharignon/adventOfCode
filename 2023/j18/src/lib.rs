@@ -66,7 +66,7 @@ pub fn fill_digs(digs: &HashSet<Point>) -> HashSet<Point> {
             break;
         }
     }
-    println!("{start_fill:?}");
+    // println!("{start_fill:?}");
     all_digs.insert(start_fill);
     print_digs(&all_digs);
     let mut opens = vec![start_fill];
@@ -93,7 +93,7 @@ pub fn count_inside(digs: &HashSet<Point>) -> i64 {
     let mut live_cells = 0;
     let mut last_row = 0;
     let mut last_cols = Vec::<i64>::new();
-    println!("{mmap:?} {rows:?}");
+    // println!("{mmap:?} {rows:?}");
     for r in rows {
         count += live_cells * (r-last_row).abs();
         // println!("{live_cells} * ({r} - {last_row}) = {}", live_cells * (r-last_row).abs());
@@ -120,18 +120,20 @@ pub fn count_inside(digs: &HashSet<Point>) -> i64 {
         let cr = count_reduction(&existing_cols, &corners, &last_cols);
         count += cr;
 
+        /*
         if live_cells>0 {
-            println!("{},{}", live_cells, cr);
+            // println!("{},{}", live_cells, cr);
             for i in 1..((r-last_row).abs()) {
                 println!("{live_cells},0");
             }
         }
+        */
 
         live_cells = 0;
         for chunk in last_cols.chunks(2) {
             live_cells += chunk[1] - chunk[0] + 1;
         }
-        println!("{last_cols:?} {live_cells}");
+        // println!("{last_cols:?} {live_cells}");
         last_row = *r;
     }
     count += live_cells;
@@ -188,21 +190,21 @@ pub fn count_dig(input: &str) -> i64 {
 
         let sx = current.0;
         let sy = current.1;
-        match olddirection {
+        match direction {
             "U" => { // "U"
-                current = Point(sx, sy - olddistance);
+                current = Point(sx, sy - distance);
                 digs.insert(current);
             },
             "D" => { // "D"
-                current = Point(sx, sy + olddistance);
+                current = Point(sx, sy + distance);
                 digs.insert(current);
             },
             "L" => { // "L"
-                current = Point(sx - olddistance, sy);
+                current = Point(sx - distance, sy);
                 digs.insert(current);
             },
             "R" => { // "R"
-                current = Point(sx + olddistance, sy);
+                current = Point(sx + distance, sy);
                 digs.insert(current);
             },
             _ => {
@@ -210,7 +212,7 @@ pub fn count_dig(input: &str) -> i64 {
             }
         };
     }
-    print_digs(&digs);
+    //print_digs(&digs);
     count_inside(&digs)
     //digs = fill_digs(&digs);
     //print_digs(&digs);
@@ -237,7 +239,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        assert_eq!(count_dig(inputs::EXAMPLE), 62); // 952408144115);
-        assert_eq!(count_dig(inputs::INPUT), 35401);
+        assert_eq!(count_dig(inputs::EXAMPLE), 952408144115); // 952408144115);
+        assert_eq!(count_dig(inputs::INPUT), 48020869073824);
     }
 }
