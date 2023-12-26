@@ -146,21 +146,6 @@ pub fn new_surface(width: i64, depth: i64) -> Vec<Vec<Option<Brick>>> {
     surface
 }
 
-
-pub fn print_surface(surface: &Vec<Vec<Option<Brick>>>, width: i64, depth: i64) {
-    for x in 0..width as usize {
-        let mut row = String::new();
-        for y in 0..depth as usize {
-            row += &format!("{}", match surface[x][y] {
-                None => 0,
-                Some(brick) => brick.1.2,
-            });
-        }
-        println!("{row}");
-    }
-    println!("");
-}
-
 pub fn letter(position: usize) -> char {
     ('A' as u8 + TryInto::<u8>::try_into(position).unwrap()) as char
 }
@@ -213,7 +198,7 @@ pub fn print_stack(bricks: &HashSet<Brick>) {
 pub fn count_candidate(stack: Vec<Brick>) -> usize {
     let mut sorted_z = stack;
     sorted_z.sort_by(|b1, b2| b1.min_z().cmp(&b2.min_z()));
-    println!("{sorted_z:?}");
+    // println!("{sorted_z:?}");
 
     let width = sorted_z.iter().map(|b| b.max_x()).max().unwrap() + 1;
     let depth = sorted_z.iter().map(|b| b.max_y()).max().unwrap() + 1;
@@ -222,66 +207,29 @@ pub fn count_candidate(stack: Vec<Brick>) -> usize {
 
     let mut supporters = MultiMap::<Brick, Brick>::new();
     let mut desintegrable = HashSet::<Brick>::new();
-    let mut dropping = HashSet::<Brick>::new();
+    // let mut dropping = HashSet::<Brick>::new();
     for brick in sorted_z {
-        dropping.insert(brick);
-        if dropping.len() < 26 {
-            println!("Dropping");
-            print_stack(&dropping);
-        }
+        // dropping.insert(brick);
+        // if dropping.len() < 26 {
+        //     println!("Dropping");
+        //     print_stack(&dropping);
+        // }
         let moved_brick = move_brick(brick, &mut surface, &mut supporters);
         desintegrable.insert(moved_brick);
-        if desintegrable.len() < 26 {
-            println!("SUPPORTERS");
-            for (brick, bricks) in supporters.iter_all() {
-                println!("{brick:?} : {} {bricks:?}", bricks.len());
-            }
-            println!("Dropped");
-            print_stack(&desintegrable);
-        }
+        // if desintegrable.len() < 26 {
+        //     println!("SUPPORTERS");
+        //     for (brick, bricks) in supporters.iter_all() {
+        //         println!("{brick:?} : {} {bricks:?}", bricks.len());
+        //     }
+        //     println!("Dropped");
+        //     print_stack(&desintegrable);
+        // }
     }
-
-    // let mut desintegrable = HashSet::<Brick>::new();
-    // let mut supps = HashSet::<Brick>::new();
-    /*
-    for (brick, bricks) in supporters.iter_all() {
-        
-        for supporter in bricks {
-            if bricks.len() > 1 {
-                desintegrable.insert(*supporter);
-            }
-            supps.insert(*supporter);
-        }
-    }
-    */
-    /*
-
-    for (brick, bricks) in supporters.iter_all() {
-        if bricks.len() == 1 {
-            desintegrable.remove(&bricks[0]);
-        }
-    }
-
-    for x in 0..width as usize {
-        for y in 0..depth as usize {
-            let cell = surface[x][y];
-            if cell == None {
-                continue;
-            }
-            let brick = cell.unwrap();
-            if ! supps.contains(&brick) {
-                desintegrable.insert(brick);
-            }
-        }
-    }
-    */
     for (_brick, bricks) in supporters.iter_all() {
         if bricks.len() == 1 {
             desintegrable.remove(&bricks[0]);
         }
     }
-    //supporters.iter_all().map(|(_brick, bricks)| bricks.len() - 1).sum()
-    // println!("{desintegrable:?}");
     desintegrable.len()
 }
 
