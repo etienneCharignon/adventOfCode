@@ -1,15 +1,10 @@
 mod inputs;
 
-use std::cmp;
+use multimap::MultiMap;
+use std::collections::HashMap;
 
 #[derive(Debug, PartialEq, Copy, Clone, Hash, Eq)]
 pub struct Point(pub i64, pub i64);
-
-#[derive(Debug, PartialEq, Clone, Hash, Eq)]
-pub struct Path {
-    pub length: i64,
-    pub next: [Option<Box<Path>>; 2],
-}
 
 pub fn add(a: Point, b: Point) -> Point {
     Point(a.0 + b.0, a.1 + b.1)
@@ -81,7 +76,7 @@ pub fn next_pos(current: Point, current_direction: Point, field: &Vec<Vec<char>>
     positions
 }
 
-pub fn build_graph(start: Point, start_direction: Point, field: &Vec<Vec<char>>) -> Path {
+pub fn build_graph(start: Point, start_direction: Point, field: &Vec<Vec<char>>, nexts_path: &mut MultiMap<Point, Point>, lengths: &mut HashMap<Point, usize>) {
     // println!("Build graph");
     let mut current = start;
     let mut current_direction = start_direction;
@@ -93,42 +88,46 @@ pub fn build_graph(start: Point, start_direction: Point, field: &Vec<Vec<char>>)
         length += 1;
     }
     if current.1 == field.len() as i64 - 1 {
-        return Path{length: length + 1, next: [None, None]};
+        lengths.insert(start, length + 1);
+        return;
     }
 
     let crossroad = add(current, current_direction);
-    // println!("crossroad {crossroad:?}, {current_direction:?}");
     let exits = next_pos(crossroad, current_direction, field, 2);
+    // println!("crossroad {crossroad:?}, {current_direction:?}");
     // println!("Exits : {exits:?}");
-    let second_next = if exits.len() > 1 {Some(Box::new(build_graph(exits[1].0, exits[1].1, field)))} else { None };
-    Path{
-        length: length + 2,
-        next: [
-            Some(Box::new(build_graph(exits[0].0, exits[0].1, field))),
-            second_next,
-        ]
+    lengths.insert(start, length + 2);
+    for exit in exits.clone() {
+        nexts_path.insert(start, exit.0);
+    }
+
+    for exit in exits {
+        if ! nexts_path.contains_key(&exit.0) {
+            build_graph(exit.0, exit.1, field, nexts_path, lengths);
+        }
     }
 }
 
-pub fn find_longest(graph: &Path) -> i64 {
-    if graph.next == [None, None] {
-        return graph.length;
+pub fn find_longest(start: Point, nexts_path: &MultiMap<Point, Point>, lengths: &HashMap<Point, usize>) -> usize {
+    let start_length = lengths.get(&start).unwrap();
+    if ! nexts_path.contains_key(&start) {
+        return *start_length as usize;
     }
-    let left = graph.next[0].clone().unwrap();
-    match graph.next[1].clone() {
-        None => graph.length + find_longest(&left),
-        Some(right) => graph.length + cmp::max(find_longest(&left),find_longest(&right)),
-    }
+
+    let result = start_length + nexts_path.get_vec(&start).unwrap().iter().map(|next| find_longest(*next, nexts_path, lengths)).max().unwrap();
+    result
 }
 
-pub fn find_longest_path(input: &str) -> i64 {
+pub fn find_longest_path(input: &str) -> usize {
     let field = read(input);
     println!("{field:?}");
     let start = Point(1, 0);
     let start_direction = Point(0, 1);
-    let graph = build_graph(start, start_direction, &field);
-    println!("{graph:?}");
-    find_longest(&graph) - 1
+    let mut nexts_path = MultiMap::<Point, Point>::new();
+    let mut lengths = HashMap::<Point, usize>::new();
+    build_graph(start, start_direction, &field, &mut nexts_path, &mut lengths);
+    println!("{nexts_path:?}");
+    find_longest(start, &nexts_path, &lengths) - 1
 }
 
 #[cfg(test)]
