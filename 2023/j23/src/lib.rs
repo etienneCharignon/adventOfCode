@@ -34,14 +34,19 @@ pub fn left(direction: Point) -> Point {
     }
 }
 
-pub fn can_walk(pos: Point, direction: Point, field: &Vec<Vec<char>>) -> bool {
+pub fn can_walk(pos: Point, _direction: Point, field: &Vec<Vec<char>>) -> bool {
     //println!("{pos:?} direction {direction:?}, {}", field[pos.1 as usize][pos.0 as usize]);
+    if pos.1 < 0 || pos.0 < 0 || pos.1 >= field.len() as i64 || pos.0 >= field[0].len() as i64 {
+        return false;
+    }
     match field[pos.1 as usize][pos.0 as usize] {
         '#' => false,
+        /*
         '>' => direction == Point(1, 0),
         'v' => direction == Point(0, 1),
         '<' => direction == Point(-1, 0),
         '^' => direction == Point(0, -1),
+        */
         _ => true
     }
 }
@@ -76,46 +81,116 @@ pub fn next_pos(current: Point, current_direction: Point, field: &Vec<Vec<char>>
     positions
 }
 
-pub fn build_graph(start: Point, start_direction: Point, field: &Vec<Vec<char>>, nexts_path: &mut MultiMap<Point, Point>, lengths: &mut HashMap<Point, usize>) {
+pub fn compute_id(p1: Point, p2:Point) -> (Point, Point) {
+    if p1.0 < p2.0 {
+        (p1, p2)
+    }
+    else if p1.0 > p2.0 {
+        (p2, p1)
+    }
+    else if p1.1 < p2.1 {
+        (p1, p2)
+    }
+    else {
+        (p2, p1)
+    }
+}
+
+pub fn build_graph(start: Point, start_direction: Point, field: &Vec<Vec<char>>,
+                   nexts_path: &mut MultiMap<Point, Point>, lengths: &mut HashMap<Point, usize>,
+                   path_ids: &mut HashMap<Point, (Point, Point)>) {
     // println!("Build graph");
     let mut current = start;
+    let mut end = current;
     let mut current_direction = start_direction;
     (current, current_direction) = next_pos(current, current_direction, field, 1)[0];
     let mut length = 1;
-    while field[current.1 as usize][current.0 as usize] == '.' && current.1 != field.len() as i64 - 1 {
+    let mut next_positions = vec![];
+    loop {
         // println!("{current:?} : {current_direction:?}");
-        (current, current_direction) = next_pos(current, current_direction, field, 1)[0];
         length += 1;
-    }
-    if current.1 == field.len() as i64 - 1 {
-        lengths.insert(start, length + 1);
-        return;
+        next_positions = next_pos(current, current_direction, field, 3);
+        if next_positions.len() == 0 {
+            lengths.insert(start, length);
+            let id = compute_id(start, current);
+            path_ids.insert(start, id);
+            path_ids.insert(current, id);
+            return;
+        }
+        if next_positions.len() > 1 {
+            break;
+        }
+        end = current;
+        (current, current_direction) = next_positions[0]
     }
 
-    let crossroad = add(current, current_direction);
-    let exits = next_pos(crossroad, current_direction, field, 2);
     // println!("crossroad {crossroad:?}, {current_direction:?}");
-    // println!("Exits : {exits:?}");
-    lengths.insert(start, length + 2);
-    for exit in exits.clone() {
+    // println!("Exits : {next_positions:?}");
+    lengths.insert(start, length);
+    lengths.insert(end, length);
+    let id = compute_id(start, end);
+    path_ids.insert(start, id);
+    path_ids.insert(end, id);
+    for exit in next_positions.clone() {
         nexts_path.insert(start, exit.0);
     }
 
-    for exit in exits {
+    for exit in next_positions {
         if ! nexts_path.contains_key(&exit.0) {
-            build_graph(exit.0, exit.1, field, nexts_path, lengths);
+            build_graph(exit.0, exit.1, field, nexts_path, lengths, path_ids);
         }
     }
 }
 
-pub fn find_longest(start: Point, nexts_path: &MultiMap<Point, Point>, lengths: &HashMap<Point, usize>) -> usize {
+pub fn print_visited(start: Point, visited: &mut Vec<(Point, Point)>, lengths: &HashMap<Point, usize>) {
+    let mut printout = String::new();
+    println!("{start:?}");
+    for path in visited.clone() {
+        printout += &format!("{path:?}, ");
+    }
+    println!("{printout}");
+    printout = String::new();
+    let mut count = 0;
+    for path in visited {
+        let length = match lengths.get(&path.0) { None => 0, Some(l) => *l};
+        count += length;
+        printout += &format!("{:?}, ", length );
+    }
+    println!("{count}: {printout}");
+}
+
+pub fn find_longest(start: Point, nexts_path: &MultiMap<Point, Point>, lengths: &HashMap<Point, usize>,
+                    path_ids: &HashMap<Point, (Point, Point)>, visited: &mut Vec<(Point, Point)>) -> Option<usize> {
+    let id = path_ids.get(&start).unwrap();
+    if visited.contains(&id) {
+        return None;
+    }
+    visited.push(*id);
+
     let start_length = lengths.get(&start).unwrap();
     if ! nexts_path.contains_key(&start) {
-        return *start_length as usize;
+        print_visited(start, visited, lengths);
+        return Some(*start_length as usize);
     }
+ 
+    let nexts_longest: Vec<Option<usize>> = nexts_path.get_vec(&start).unwrap().iter()
+                                            .map(|next| find_longest(*next, nexts_path, lengths, path_ids, &mut visited.clone())).collect();
+    let next_longest_length = nexts_longest.iter().map(|length| match length { None => 0, Some(l) => *l}).max().unwrap();
+    if next_longest_length == 0 {
+        return None;
+    }
+    // println!("{} : {start:?}\n{next_longest:?}\n{visited:?}", *next_longest_length);
+    Some(start_length + next_longest_length)
+}
 
-    let result = start_length + nexts_path.get_vec(&start).unwrap().iter().map(|next| find_longest(*next, nexts_path, lengths)).max().unwrap();
-    result
+pub fn print_graph(nexts_path: &MultiMap<Point, Point>, lengths: &HashMap<Point, usize>, path_ids: &HashMap<Point, (Point, Point)>) {
+    for (key, value) in nexts_path {
+        println!("length {:02}: {key:?}, {value:?}", lengths.get(&key).unwrap());
+    }
+    println!("Path Ids:");
+    for (key, value) in path_ids {
+        println!("{key:?}: {value:?}");
+    }
 }
 
 pub fn find_longest_path(input: &str) -> usize {
@@ -125,9 +200,10 @@ pub fn find_longest_path(input: &str) -> usize {
     let start_direction = Point(0, 1);
     let mut nexts_path = MultiMap::<Point, Point>::new();
     let mut lengths = HashMap::<Point, usize>::new();
-    build_graph(start, start_direction, &field, &mut nexts_path, &mut lengths);
-    println!("{nexts_path:?}");
-    find_longest(start, &nexts_path, &lengths) - 1
+    let mut path_ids = HashMap::<Point, (Point, Point)>::new();
+    build_graph(start, start_direction, &field, &mut nexts_path, &mut lengths, &mut path_ids);
+    print_graph(&nexts_path, &lengths, &path_ids);
+    find_longest(start, &nexts_path, &lengths, &path_ids, &mut Vec::<(Point, Point)>::new()).unwrap() - 1
 }
 
 #[cfg(test)]
@@ -138,11 +214,13 @@ mod tests {
     fn it_compute_next_pos() {
         let field = read(inputs::EXAMPLE);
         assert_eq!(next_pos(Point(9, 3), Point(0,-1), &field, 1)[0], (Point(10, 3), Point(1, 0)));
+        assert_eq!(next_pos(Point(19, 18), Point(0, 1), &field, 3), vec![(Point(19, 19), Point(0, 1))]);
+        assert_eq!(next_pos(Point(19, 19), Point(0, 1), &field, 3), vec![(Point(19, 20), Point(0, 1)), (Point(18, 19), Point(-1, 0))]);
     }
 
     #[test]
     fn it_solve() {
-        assert_eq!(find_longest_path(inputs::EXAMPLE), 94);
-        assert_eq!(find_longest_path(inputs::INPUT), 2130);
+        assert_eq!(find_longest_path(inputs::EXAMPLE), 154);
+        // assert_eq!(find_longest_path(inputs::INPUT), 2130);
     }
 }
