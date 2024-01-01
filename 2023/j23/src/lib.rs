@@ -160,21 +160,27 @@ pub fn print_visited(start: Point, visited: &mut Vec<(Point, Point)>, lengths: &
 }
 
 pub fn find_longest(start: Point, nexts_path: &MultiMap<Point, Point>, lengths: &HashMap<Point, usize>,
-                    path_ids: &HashMap<Point, (Point, Point)>, visited: &mut Vec<(Point, Point)>) -> Option<usize> {
+                    path_ids: &HashMap<Point, (Point, Point)>, visited: &mut Vec<(Point, Point)>, nexts: &Vec<Point>) -> Option<usize> {
     let id = path_ids.get(&start).unwrap();
     if visited.contains(&id) {
         return None;
     }
-    visited.push(*id);
+    for next in nexts {
+        let id_next = path_ids.get(&next).unwrap();
+        visited.push(*id_next);
+    }
 
     let start_length = lengths.get(&start).unwrap();
     if ! nexts_path.contains_key(&start) {
-        print_visited(start, visited, lengths);
+        // print_visited(start, visited, lengths);
         return Some(*start_length as usize);
     }
  
-    let nexts_longest: Vec<Option<usize>> = nexts_path.get_vec(&start).unwrap().iter()
-                                            .map(|next| find_longest(*next, nexts_path, lengths, path_ids, &mut visited.clone())).collect();
+    let nexts = nexts_path.get_vec(&start).unwrap();
+    let nexts_longest: Vec<Option<usize>> = nexts
+                                            .iter()
+                                            .map(|next| find_longest(*next, nexts_path, lengths, path_ids, &mut visited.clone(), &nexts))
+                                            .collect();
     let next_longest_length = nexts_longest.iter().map(|length| match length { None => 0, Some(l) => *l}).max().unwrap();
     if next_longest_length == 0 {
         return None;
@@ -203,7 +209,7 @@ pub fn find_longest_path(input: &str) -> usize {
     let mut path_ids = HashMap::<Point, (Point, Point)>::new();
     build_graph(start, start_direction, &field, &mut nexts_path, &mut lengths, &mut path_ids);
     print_graph(&nexts_path, &lengths, &path_ids);
-    find_longest(start, &nexts_path, &lengths, &path_ids, &mut Vec::<(Point, Point)>::new()).unwrap() - 1
+    find_longest(start, &nexts_path, &lengths, &path_ids, &mut Vec::<(Point, Point)>::new(), &vec![]).unwrap() - 1
 }
 
 #[cfg(test)]
@@ -221,6 +227,6 @@ mod tests {
     #[test]
     fn it_solve() {
         assert_eq!(find_longest_path(inputs::EXAMPLE), 154);
-        // assert_eq!(find_longest_path(inputs::INPUT), 2130);
+        assert_eq!(find_longest_path(inputs::INPUT), 6710);
     }
 }
