@@ -180,7 +180,7 @@ pub fn find_longest(start: Point, nexts_path: &MultiMap<Point, Point>, lengths: 
     nexts.iter()
          .map(|next| find_longest(*next, nexts_path, lengths, path_ids, &mut visited.clone(), &nexts))
          .reduce(Option::max)
-         .unwrap()
+         .and_then(|somemax| somemax)
          .and_then(|next_longest_length| {
             // println!("{} : {start:?}\n{next_longest:?}\n{visited:?}", *next_longest_length);
             Some(start_length + next_longest_length)
@@ -228,8 +228,24 @@ mod tests {
             [Some(1), Some(2), None]
                 .into_iter()
                 .reduce(Option::max)
-                .unwrap(),
+                .and_then(|o| o),
             Some(2)
+        );
+        let list: Vec<Option<u32>> = vec![];
+        assert_eq!(
+            list
+                .into_iter()
+                .reduce(Option::max)
+                .and_then(|o| o),
+            None
+        );
+        let list: Vec<Option<u32>> = vec![None];
+        assert_eq!(
+            list
+                .into_iter()
+                .reduce(Option::max)
+                .and_then(|o| o),
+            None
         );
     }
 
