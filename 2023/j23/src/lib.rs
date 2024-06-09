@@ -177,16 +177,14 @@ pub fn find_longest(start: Point, nexts_path: &MultiMap<Point, Point>, lengths: 
     }
  
     let nexts = nexts_path.get_vec(&start).unwrap();
-    let nexts_longest: Vec<Option<usize>> = nexts
-                                            .iter()
-                                            .map(|next| find_longest(*next, nexts_path, lengths, path_ids, &mut visited.clone(), &nexts))
-                                            .collect();
-    let next_longest_length = nexts_longest.iter().map(|length| match length { None => 0, Some(l) => *l}).max().unwrap();
-    if next_longest_length == 0 {
-        return None;
-    }
-    // println!("{} : {start:?}\n{next_longest:?}\n{visited:?}", *next_longest_length);
-    Some(start_length + next_longest_length)
+    nexts.iter()
+         .map(|next| find_longest(*next, nexts_path, lengths, path_ids, &mut visited.clone(), &nexts))
+         .reduce(Option::max)
+         .unwrap()
+         .and_then(|next_longest_length| {
+            // println!("{} : {start:?}\n{next_longest:?}\n{visited:?}", *next_longest_length);
+            Some(start_length + next_longest_length)
+         })
 }
 
 pub fn print_graph(nexts_path: &MultiMap<Point, Point>, lengths: &HashMap<Point, usize>, path_ids: &HashMap<Point, (Point, Point)>) {
@@ -222,6 +220,17 @@ mod tests {
         assert_eq!(next_pos(Point(9, 3), Point(0,-1), &field, 1)[0], (Point(10, 3), Point(1, 0)));
         assert_eq!(next_pos(Point(19, 18), Point(0, 1), &field, 3), vec![(Point(19, 19), Point(0, 1))]);
         assert_eq!(next_pos(Point(19, 19), Point(0, 1), &field, 3), vec![(Point(19, 20), Point(0, 1)), (Point(18, 19), Point(-1, 0))]);
+    }
+
+    #[test]
+    fn find_max_in_list_of_optional() {
+        assert_eq!(
+            [Some(1), Some(2), None]
+                .into_iter()
+                .reduce(Option::max)
+                .unwrap(),
+            Some(2)
+        );
     }
 
     #[test]
