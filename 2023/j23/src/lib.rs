@@ -180,7 +180,7 @@ pub fn find_longest(start: Point, nexts_path: &MultiMap<Point, Point>, lengths: 
     nexts.iter()
          .map(|next| find_longest(*next, nexts_path, lengths, path_ids, &mut visited.clone(), &nexts))
          .reduce(Option::max)
-         .and_then(|somemax| somemax)
+         .flatten()
          .and_then(|next_longest_length| {
             // println!("{} : {start:?}\n{next_longest:?}\n{visited:?}", *next_longest_length);
             Some(start_length + next_longest_length)
