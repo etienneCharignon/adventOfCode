@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 pub const EXAMPLE:&str = "3   4
 4   3
 2   5
@@ -5,6 +6,7 @@ pub const EXAMPLE:&str = "3   4
 3   9
 3   3";
 
+#[allow(dead_code)]
 pub const INPUT:&str = "41226   69190
 89318   10100
 59419   23880
