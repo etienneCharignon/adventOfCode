@@ -15,15 +15,12 @@ pub fn count_safe(input: &str) -> i32 {
     let mut count = 0;
     for line in  lines {
         let levels: Vec<i32> = line.split_whitespace().map(|s| s.parse().expect("Failed to parse number")).collect();
-        if safe(levels.clone()) { count += 1 }
-        else {
-            for i in 0..levels.len() {
-                let mut levels_but_one = levels.clone();
-                levels_but_one.remove(i);
-                if safe(levels_but_one) {
-                    count += 1;
-                    break;
-                }
+        for i in 0..levels.len() {
+            let mut levels_but_one = levels.clone();
+            levels_but_one.remove(i);
+            if safe(levels_but_one) {
+                count += 1;
+                break;
             }
         }
     }
