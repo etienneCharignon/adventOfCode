@@ -18,44 +18,27 @@ pub fn get(input: &Vec<Vec<char>>, x: usize, y: usize, h: usize, w: usize, direc
     Some(input[new_x as usize][new_y as usize])
 }
 
-pub fn count_xmas(input: &Vec<Vec<char>>, x: usize, y: usize, h:usize, w:usize) -> usize {
-    let mut count = 0;
+pub fn count_xmas(input: &Vec<Vec<char>>, x: usize, y: usize, w:usize, h:usize) -> usize {
     if input[x][y] == 'A' {
-        if get(input, x, y, h, w, (-1, -1), 1) == Some('M') &&
-           get(input, x, y, h, w, (-1, 1), 1) == Some('M') &&
-           get(input, x, y, h, w, (1, 1), 1) == Some('S') &&
-           get(input, x, y, h, w, (1, -1), 1) == Some('S') {
-               count += 1;
-        }
-        if get(input, x, y, h, w, (-1, -1), 1) == Some('M') &&
-           get(input, x, y, h, w, (-1, 1), 1) == Some('S') &&
-           get(input, x, y, h, w, (1, 1), 1) == Some('S') &&
-           get(input, x, y, h, w, (1, -1), 1) == Some('M') {
-               count += 1;
-        }
-        if get(input, x, y, h, w, (-1, -1), 1) == Some('S') &&
-           get(input, x, y, h, w, (-1, 1), 1) == Some('M') &&
-           get(input, x, y, h, w, (1, 1), 1) == Some('M') &&
-           get(input, x, y, h, w, (1, -1), 1) == Some('S') {
-               count += 1;
-        }
-        if get(input, x, y, h, w, (-1, -1), 1) == Some('S') &&
-           get(input, x, y, h, w, (-1, 1), 1) == Some('S') &&
-           get(input, x, y, h, w, (1, 1), 1) == Some('M') &&
-           get(input, x, y, h, w, (1, -1), 1) == Some('M') {
-               count += 1;
+        for pattern in [('M', 'M', 'S', 'S'), ('M', 'S', 'S', 'M'), ('S', 'S', 'M', 'M'), ('S', 'M', 'M', 'S')] {
+            if get(input, x, y, h, w, (-1, -1), 1) == Some(pattern.0) &&
+               get(input, x, y, h, w, (-1, 1), 1) == Some(pattern.1) &&
+               get(input, x, y, h, w, (1, 1), 1) == Some(pattern.2) &&
+               get(input, x, y, h, w, (1, -1), 1) == Some(pattern.3) {
+                   return 1;
+            }
         }
     }
-    count
+    0
 }
 
 pub fn search(input: Vec<Vec<char>>) -> usize {
     let mut count = 0;
     let height = input.len();
-    for (row, line) in input.iter().enumerate() {
-        let width = line.len();
+    let width = input[0].len();
+    for row in 0..height {
         for col in 0..width {
-            count += count_xmas(&input, col, row, height, width);
+            count += count_xmas(&input, col, row, width, height);
         }
     }
     count
