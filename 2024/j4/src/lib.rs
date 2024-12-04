@@ -20,19 +20,35 @@ pub fn get(input: &Vec<Vec<char>>, x: usize, y: usize, h: usize, w: usize, direc
 
 pub fn count_xmas(input: &Vec<Vec<char>>, x: usize, y: usize, h:usize, w:usize) -> usize {
     let mut count = 0;
-    if input[x][y] == 'X' {
-        for d in [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (-1, 1), (1, -1)] {
-            if get(input, x, y, h, w, d, 1) == Some('M') {
-                if get(input, x, y, h, w, d, 2) == Some('A') {
-                    if get(input, x, y, h, w, d, 3) == Some('S') {
-                        count += 1;
-                    }
-                }
-            }
+    if input[x][y] == 'A' {
+        if get(input, x, y, h, w, (-1, -1), 1) == Some('M') &&
+           get(input, x, y, h, w, (-1, 1), 1) == Some('M') &&
+           get(input, x, y, h, w, (1, 1), 1) == Some('S') &&
+           get(input, x, y, h, w, (1, -1), 1) == Some('S') {
+               count += 1;
+        }
+        if get(input, x, y, h, w, (-1, -1), 1) == Some('M') &&
+           get(input, x, y, h, w, (-1, 1), 1) == Some('S') &&
+           get(input, x, y, h, w, (1, 1), 1) == Some('S') &&
+           get(input, x, y, h, w, (1, -1), 1) == Some('M') {
+               count += 1;
+        }
+        if get(input, x, y, h, w, (-1, -1), 1) == Some('S') &&
+           get(input, x, y, h, w, (-1, 1), 1) == Some('M') &&
+           get(input, x, y, h, w, (1, 1), 1) == Some('M') &&
+           get(input, x, y, h, w, (1, -1), 1) == Some('S') {
+               count += 1;
+        }
+        if get(input, x, y, h, w, (-1, -1), 1) == Some('S') &&
+           get(input, x, y, h, w, (-1, 1), 1) == Some('S') &&
+           get(input, x, y, h, w, (1, 1), 1) == Some('M') &&
+           get(input, x, y, h, w, (1, -1), 1) == Some('M') {
+               count += 1;
         }
     }
     count
 }
+
 pub fn search(input: Vec<Vec<char>>) -> usize {
     let mut count = 0;
     let height = input.len();
@@ -51,7 +67,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        assert_eq!(search(read_input(inputs::EXAMPLE)), 18);
-        assert_eq!(search(read_input(inputs::INPUT)), 2462);
+        assert_eq!(search(read_input(inputs::EXAMPLE)), 9);
+        assert_eq!(search(read_input(inputs::INPUT)), 1877);
     }
 }
