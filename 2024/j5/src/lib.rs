@@ -48,23 +48,11 @@ pub fn compare(priorities: &MultiMap<i32, i32>, p1: &i32, p2: &i32) -> Ordering 
                 Ordering::Less
             }
             else {
-                Ordering::Greater
+                Ordering::Equal
             }
         },
         _ => {
-            match priorities.get_vec(p2) {
-                Some(after_pages) => {
-                    if after_pages.contains(p1) {
-                        Ordering::Greater
-                    }
-                    else {
-                        Ordering::Less
-                    }
-                },
-                _ => {
-                    Ordering::Equal
-                }
-            }
+            Ordering::Equal
         }
     }
 }
