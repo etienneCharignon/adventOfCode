@@ -19,7 +19,7 @@ pub fn check_equation(test_value: i64, terms: &[i64]) -> bool {
         let Some((last_term, previous)) = terms.split_last() else {
             return false;
         };
-        check_equation(test_value - last_term, previous) || 
+        test_value > *last_term && check_equation(test_value - last_term, previous) || 
             test_value % last_term == 0 && check_equation(test_value / last_term, previous) ||
             terminate_by(test_value, last_term) && check_equation(remove_last(test_value, last_term), previous)
     }
