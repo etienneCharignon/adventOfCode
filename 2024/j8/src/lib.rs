@@ -25,16 +25,12 @@ pub fn read_map(input: &str) -> (MultiMap<char, Point>, i32, i32) {
     (map, height as i32, width as i32)
 }
 
-pub fn compute_distance(p1: &Point, p2: &Point) -> Point {
-    Point { x: p2.x - p1.x , y:  p2.y - p1.y }
-}
-
-pub fn substract(p: &Point, distance: Point) -> Point {
+pub fn substract(p: &Point, distance: &Point) -> Point {
     Point { x: p.x - distance.x, y: p.y - distance.y }
 }
 
-pub fn inside_map(p : &Point, height: i32, width: i32) -> bool {
-    p.x >=0 && p.x < width && p.y >= 0 && p.y < height
+pub fn outside_map(p : &Point, height: i32, width: i32) -> bool {
+    p.x <0 || p.x >= width || p.y < 0 || p.y >= height
 }
 
 pub fn count_antinode(map: (MultiMap<char, Point>, i32, i32)) -> usize {
@@ -43,14 +39,15 @@ pub fn count_antinode(map: (MultiMap<char, Point>, i32, i32)) -> usize {
         println!("Key: {}, Value: {:?}", frequency, positions);
         for p1 in positions {
             for p2 in positions {
-                if *p1 == *p2 { continue; }
-                let distance = compute_distance(p1, p2);
+                if p1 == p2 { continue; }
+
+                let distance = substract(p2, p1);
                 let mut antinode_pos = *p1;
                 loop {
-                    if ! inside_map(&antinode_pos, map.1, map.2) { break; }
+                    if outside_map(&antinode_pos, map.1, map.2) { break; }
 
                     antinodes.insert(antinode_pos);
-                    antinode_pos = substract(&antinode_pos, distance);
+                    antinode_pos = substract(&antinode_pos, &distance);
                 }
             }
         }
@@ -65,6 +62,6 @@ mod tests {
     #[test]
     fn it_works() {
         assert_eq!(count_antinode(read_map(inputs::EXAMPLE)), 34);
-        assert_eq!(count_antinode(read_map(inputs::INPUT)), 311);
+        assert_eq!(count_antinode(read_map(inputs::INPUT)), 1115);
     }
 }
