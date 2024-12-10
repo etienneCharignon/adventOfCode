@@ -1,6 +1,6 @@
 mod inputs;
 
-use std::collections::HashSet;
+use multimap::MultiMap;
 
 #[derive(Debug, PartialEq, Copy, Clone, Hash, Eq)]
 pub struct Pos {
@@ -40,10 +40,10 @@ pub fn outside_map(p : &Pos, height: i32, width: i32) -> bool {
     p.x <0 || p.x >= width || p.y < 0 || p.y >= height
 }
 
-pub fn head_score(head: Pos, world: &Vec<Vec<u32>>, height: i32, width: i32, nines: &mut HashSet<Pos>) {
+pub fn head_score(head: Pos, world: &Vec<Vec<u32>>, height: i32, width: i32, nines: &mut MultiMap<Pos, i32>) {
     let current = world[head.y as usize][head.x as usize];
     if current == 9 {
-        nines.insert(head);
+        nines.insert(head, 9);
     }
     else {
         let directions = [Pos{x:1, y:0},Pos{x:0, y:1}, Pos{x:-1, y:0}, Pos{x:0, y:-1}];
@@ -63,9 +63,9 @@ pub fn score(input: &str) -> usize {
     println!("{:?}", trail_heads);
     let mut total_score = 0;
     for head in trail_heads {
-        let mut nines = HashSet::new();
+        let mut nines = MultiMap::new();
         head_score(head, &world, height as i32, width as i32, &mut nines);
-        total_score += nines.len();
+        total_score += nines.iter_all().map(|(k, v)| v.len()).sum::<usize>()
     }
 
     total_score
@@ -77,8 +77,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        assert_eq!(score(inputs::SIMPLE_EXAMPLE), 2);
-        assert_eq!(score(inputs::EXAMPLE), 36);
-        assert_eq!(score(inputs::INPUT), 820);
+        assert_eq!(score(inputs::EXAMPLE), 81);
+        assert_eq!(score(inputs::INPUT), 1786);
     }
 }
