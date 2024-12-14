@@ -2,8 +2,8 @@ mod inputs;
 
 use lazy_static::lazy_static;
 use regex::Regex;
-use std::collections::HashMap;
-use std::collections::HashSet;
+use std::thread;
+use std::time::Duration;
 
 lazy_static! {
     static ref RE: Regex = Regex::new(r"([-0-9]+)").unwrap();
@@ -28,9 +28,9 @@ pub fn read(input: &str) -> Vec<Robot> {
         .map(|m| m.as_str().parse::<i64>().unwrap());
 
     while let (Some(px), Some(py), Some(vx), Some(vy)) = (
-        matches.next(), 
-        matches.next(), 
-        matches.next(), 
+        matches.next(),
+        matches.next(),
+        matches.next(),
         matches.next()
     ) {
         // println!("Position: ({}, {}), Velocity: ({}, {})", px, py, vx, vy);
@@ -44,11 +44,11 @@ pub fn read(input: &str) -> Vec<Robot> {
     robots
 }
 
-pub fn move_robot(robot: &Robot, width: i64, height: i64, n: i64) -> Robot {
+pub fn move_robot(robot: &Robot, width: i64, height: i64, n: i64, slowDown: i64) -> Robot {
     let mut new_robot = Robot {
         p: Vector {
-            x: (robot.p.x + n * robot.v.x) % width,
-            y: (robot.p.y + n * robot.v.y) % height,
+            x: (robot.p.x + n * robot.v.x / slowDown) % width,
+            y: (robot.p.y + n * robot.v.y / slowDown) % height,
         },
         v: robot.v
     };
@@ -61,15 +61,15 @@ pub fn move_robot(robot: &Robot, width: i64, height: i64, n: i64) -> Robot {
     new_robot
 }
 
-pub fn move_robots(robots: &Vec<Robot>, width: i64, height: i64, n: i64) -> Vec<Robot> {
+pub fn move_robots(robots: &Vec<Robot>, width: i64, height: i64, n: i64, slowDown: i64) -> Vec<Robot> {
     let mut new_pos = vec![];
     for robot in robots {
-        new_pos.push(move_robot(robot, width, height, n));
+        new_pos.push(move_robot(robot, width, height, n, slowDown));
     }
     new_pos
 }
 
-pub fn in_triangle(robots: &Vec<Robot>, width: i64, height: i64) -> i64 {
+pub fn in_triangle(robots: &Vec<Robot>, width: i64, _height: i64) -> i64 {
     let mut in_triangle = 0;
     for robot in robots {
         if robot.p.x >= width / 2 - robot.p.y && robot.p.x <= width / 2 + robot.p.y {
@@ -81,15 +81,6 @@ pub fn in_triangle(robots: &Vec<Robot>, width: i64, height: i64) -> i64 {
 
 pub fn affiche(robots: &Vec<Robot>, width: i64, height: i64, n: i64) -> Option<i64> {
     let factor = in_triangle(&robots, width, height);
-    /*
-    let grouped_positions: HashMap<i64, Vec<Robot>> = robots.iter()
-        .fold(HashMap::new(), |mut acc, robot| {
-            acc.entry(robot.p.y).or_insert_with(Vec::new).push(*robot);
-            acc
-        });
-    let max_height: i64 = grouped_positions.iter().map(|(_, robots)| robots.len()).max().unwrap() as i64;
-    //println!("max_height {max_height}");
-    */
     if factor < 460 {
         return None;
     }
@@ -135,10 +126,14 @@ pub fn safety_factor(robots: &Vec<Robot>, width: i64, height: i64) -> i64 {
 }
 
 pub fn affiche_n(robots: Vec<Robot>, width: i64, height: i64, n: i64) -> i64 {
+    let mut slowDown = 100;
     for i in 0..n {
-        let n_positions = move_robots(&robots, width, height, i);
+        let n_positions = move_robots(&robots, width, height, i, slowDown);
         match affiche(&n_positions, width, height, i) {
-            Some(n) => { return n; },
+            Some(_) => {
+                slowDown = 100;
+                thread::sleep(Duration::from_secs(1));
+            },
             _ => {}
         }
     }
@@ -151,18 +146,18 @@ mod tests {
 
     #[test]
     fn it_move_robot() {
-        assert_eq!(move_robot(&Robot { p: Vector { x: 2, y: 6 }, v: Vector { x: 2, y: -3 } }, 11, 7, 1),
+        assert_eq!(move_robot(&Robot { p: Vector { x: 2, y: 6 }, v: Vector { x: 2, y: -3 } }, 11, 7, 1, 1),
                               Robot { p: Vector { x: 4, y: 3 }, v: Vector { x: 2, y: -3 } });
-        assert_eq!(move_robot(&Robot { p: Vector { x: 10, y: 6 }, v: Vector { x: 1, y: 1 } }, 11, 7, 1),
+        assert_eq!(move_robot(&Robot { p: Vector { x: 10, y: 6 }, v: Vector { x: 1, y: 1 } }, 11, 7, 1, 1),
                               Robot { p: Vector { x: 0, y: 0 }, v: Vector { x: 1, y: 1 } });
-        assert_eq!(move_robot(&Robot { p: Vector { x: 0, y: 0 }, v: Vector { x: -2, y: -2 } }, 11, 7, 1),
+        assert_eq!(move_robot(&Robot { p: Vector { x: 0, y: 0 }, v: Vector { x: -2, y: -2 } }, 11, 7, 1, 1),
                               Robot { p: Vector { x: 9, y: 5 }, v: Vector { x: -2, y: -2 } });
-        assert_eq!(move_robot(&Robot { p: Vector { x: 0, y: 0 }, v: Vector { x: -1, y: -1 } }, 11, 7, 1),
+        assert_eq!(move_robot(&Robot { p: Vector { x: 0, y: 0 }, v: Vector { x: -1, y: -1 } }, 11, 7, 1, 1),
                               Robot { p: Vector { x: 10, y: 6 }, v: Vector { x: -1, y: -1 } });
     }
 
     #[test]
     fn it_works() {
-        assert_eq!(affiche_n(read(inputs::INPUT), 101, 103, 10000), 7584);
+        assert_eq!(affiche_n(read(inputs::INPUT), 101, 103, 1000000), 7584);
     }
 }
