@@ -2,6 +2,8 @@ mod inputs;
 
 use lazy_static::lazy_static;
 use regex::Regex;
+use std::collections::HashMap;
+use std::collections::HashSet;
 
 lazy_static! {
     static ref RE: Regex = Regex::new(r"([-0-9]+)").unwrap();
@@ -38,43 +40,11 @@ pub fn read(input: &str) -> Vec<Robot> {
             v: Vector { x: vx, y: vy }
         })
     }
+    println!("nombre de robot : {}", robots.len());
     robots
 }
 
-pub fn move_robots(robots: Vec<Robot>, width: i64, height: i64, n: i64) -> Vec<Robot> {
-    let mut new_pos = vec![];
-    for robot in robots {
-        new_pos.push(move_robot(robot, width, height, n));
-    }
-    new_pos
-}
-
-pub fn safety_factor(robots: Vec<Robot>, width: i64, height: i64, n: i64) -> i64 {
-    let last_positions = move_robots(robots, width, height, n);
-    let mut quadrants = [0; 4];
-    for robot in last_positions {
-        if robot.p.x < width / 2 {
-            if robot.p.y < height / 2 {
-                quadrants[0] += 1;
-            }
-            else if robot.p.y > height / 2{
-                quadrants[1] += 1
-            }
-        }
-        else if robot.p.x > width / 2 {
-            if robot.p.y < height / 2 {
-                quadrants[2] += 1;
-            }
-            else if robot.p.y > height / 2{
-                quadrants[3] += 1
-            }
-        }
-    } 
-    println!("{:?}",  quadrants);
-    quadrants.iter().product()
-}
-
-pub fn move_robot(robot: Robot, width: i64, height: i64, n: i64) -> Robot {
+pub fn move_robot(robot: &Robot, width: i64, height: i64, n: i64) -> Robot {
     let mut new_robot = Robot {
         p: Vector {
             x: (robot.p.x + n * robot.v.x) % width,
@@ -91,25 +61,108 @@ pub fn move_robot(robot: Robot, width: i64, height: i64, n: i64) -> Robot {
     new_robot
 }
 
+pub fn move_robots(robots: &Vec<Robot>, width: i64, height: i64, n: i64) -> Vec<Robot> {
+    let mut new_pos = vec![];
+    for robot in robots {
+        new_pos.push(move_robot(robot, width, height, n));
+    }
+    new_pos
+}
+
+pub fn in_triangle(robots: &Vec<Robot>, width: i64, height: i64) -> i64 {
+    let mut in_triangle = 0;
+    for robot in robots {
+        if robot.p.x >= width / 2 - robot.p.y && robot.p.x <= width / 2 + robot.p.y {
+            in_triangle += 1;
+        }
+    }
+    in_triangle
+}
+
+pub fn affiche(robots: &Vec<Robot>, width: i64, height: i64, n: i64) -> Option<i64> {
+    let factor = in_triangle(&robots, width, height);
+    /*
+    let grouped_positions: HashMap<i64, Vec<Robot>> = robots.iter()
+        .fold(HashMap::new(), |mut acc, robot| {
+            acc.entry(robot.p.y).or_insert_with(Vec::new).push(*robot);
+            acc
+        });
+    let max_height: i64 = grouped_positions.iter().map(|(_, robots)| robots.len()).max().unwrap() as i64;
+    //println!("max_height {max_height}");
+    */
+    if factor < 460 {
+        return None;
+    }
+    println!("factor : {factor}");
+    println!("iteration {n}");
+
+    let mut world: Vec<Vec<char>> = vec![];
+    for _ in 0..height {
+        world.push(vec![' '; width as usize])
+    }
+    for robot in robots {
+        world[robot.p.y as usize][robot.p.x as usize] = '*';
+    }
+    for row in world {
+        let str: String = row.iter().collect();
+        println!("{}", str);
+    }
+    Some(n)
+}
+
+pub fn safety_factor(robots: &Vec<Robot>, width: i64, height: i64) -> i64 {
+    let mut quadrants = [0; 4];
+    for robot in robots {
+        if robot.p.x < width / 2 {
+            if robot.p.y < height / 2 {
+                quadrants[0] += 1;
+            }
+            else if robot.p.y > height / 2{
+                quadrants[1] += 1
+            }
+        }
+        else if robot.p.x > width / 2 {
+            if robot.p.y < height / 2 {
+                quadrants[2] += 1;
+            }
+            else if robot.p.y > height / 2{
+                quadrants[3] += 1
+            }
+        }
+    }
+    //println!("{:?}",  quadrants);
+    quadrants.iter().product()
+}
+
+pub fn affiche_n(robots: Vec<Robot>, width: i64, height: i64, n: i64) -> i64 {
+    for i in 0..n {
+        let n_positions = move_robots(&robots, width, height, i);
+        match affiche(&n_positions, width, height, i) {
+            Some(n) => { return n; },
+            _ => {}
+        }
+    }
+    0
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn it_move_robot() {
-        assert_eq!(move_robot(Robot { p: Vector { x: 2, y: 6 }, v: Vector { x: 2, y: -3 } }, 11, 7, 1),
+        assert_eq!(move_robot(&Robot { p: Vector { x: 2, y: 6 }, v: Vector { x: 2, y: -3 } }, 11, 7, 1),
                               Robot { p: Vector { x: 4, y: 3 }, v: Vector { x: 2, y: -3 } });
-        assert_eq!(move_robot(Robot { p: Vector { x: 10, y: 6 }, v: Vector { x: 1, y: 1 } }, 11, 7, 1),
+        assert_eq!(move_robot(&Robot { p: Vector { x: 10, y: 6 }, v: Vector { x: 1, y: 1 } }, 11, 7, 1),
                               Robot { p: Vector { x: 0, y: 0 }, v: Vector { x: 1, y: 1 } });
-        assert_eq!(move_robot(Robot { p: Vector { x: 0, y: 0 }, v: Vector { x: -2, y: -2 } }, 11, 7, 1),
+        assert_eq!(move_robot(&Robot { p: Vector { x: 0, y: 0 }, v: Vector { x: -2, y: -2 } }, 11, 7, 1),
                               Robot { p: Vector { x: 9, y: 5 }, v: Vector { x: -2, y: -2 } });
-        assert_eq!(move_robot(Robot { p: Vector { x: 0, y: 0 }, v: Vector { x: -1, y: -1 } }, 11, 7, 1),
+        assert_eq!(move_robot(&Robot { p: Vector { x: 0, y: 0 }, v: Vector { x: -1, y: -1 } }, 11, 7, 1),
                               Robot { p: Vector { x: 10, y: 6 }, v: Vector { x: -1, y: -1 } });
     }
 
     #[test]
     fn it_works() {
-        assert_eq!(safety_factor(read(inputs::EXAMPLE), 11, 7, 100), 12);
-        assert_eq!(safety_factor(read(inputs::INPUT), 101, 103, 100), 236628054);
+        assert_eq!(affiche_n(read(inputs::INPUT), 101, 103, 10000), 7584);
     }
 }
