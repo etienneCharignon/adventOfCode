@@ -13,61 +13,245 @@ pub fn add(a: Pos, b: Pos) -> Pos {
 
 pub fn read(input_field: &str) -> (Vec<Vec<char>>, Pos) {
     let mut robot = Pos {x:0, y:0};
-    let mut field: Vec<Vec<char>> = input_field.split('\n').map(|line| line.chars().collect()).collect();
-    for (r, row) in input_field.split('\n').enumerate() {
-        for (c, cell) in row.chars().enumerate() {
+    let mut field: Vec<Vec<char>> = vec![];
+    for (r, line) in input_field.split('\n').enumerate() {
+        let mut row = vec![];
+        for (c, cell) in line.chars().enumerate() {
+            match cell {
+                '.'|'@' => {
+                    row.push('.');
+                    row.push('.');
+                },
+                'O' => {
+                    row.push('[');
+                    row.push(']');
+                },
+                '#' => {
+                    row.push('#');
+                    row.push('#');
+                },
+                _ => { panic!("unknown cell {}", cell) }
+            }
             if cell == '@' {
-                field[r][c] = '.';
-                robot = Pos {x: c as i32, y: r as i32};
-                break;
+                robot = Pos {x: c as i32 * 2, y: r as i32};
             }
         }
+        field.push(row);
     }
     (field, robot)
 }
 
-pub fn move_robot(field: &mut Vec<Vec<char>>, robot: Pos, moves: char) -> Pos {
+pub fn print(field: &Vec<Vec<char>>, pos: Pos) -> String {
+    let mut field_and_robot = field.clone();
+    field_and_robot[pos.y as usize][pos.x as usize] = '@';
+    let mut output = String::new();
+    for line in field_and_robot {
+        let str: String = line.iter().collect();
+        output.push_str(&str);
+        output.push_str("\n");
+    }
+    println!("{}", output);
+    output
+}
+
+pub fn move_cell(field: &mut Vec<Vec<char>>, pos: Pos, direction: char, cell: char) -> Option<Pos> {
     let directions = [Pos{x:1, y:0},Pos{x:0, y:1}, Pos{x:-1, y:0}, Pos{x:0, y:-1}];
-    let (d, d_reverse) = match moves {
-        '<' => { (directions[2], directions[0]) }
-        '>' => { (directions[0], directions[2]) }
-        '^' => { (directions[3], directions[1]) }
-        'v' => { (directions[1], directions[3]) }
+    let d = match direction {
+        '<' => { directions[2] },
+        '>' => { directions[0] },
+        '^' => { directions[3] },
+        'v' => { directions[1] }
         _ => { panic!("unkown direction") }
     };
-    let mut cursor = robot;
-    let mut boxes = vec![];
-    cursor = add(cursor, d);
-    while field[cursor.y as usize][cursor.x as usize] == 'O' {
-        boxes.push(cursor);
-        cursor = add(cursor, d);
+    let new_pos = add(pos, d);
+    let dest_cell = field[new_pos.y as usize][new_pos.x as usize];
+    match cell {
+        '@' => {
+            match dest_cell {
+                '#' => { return None; },
+                '.' => { return Some(new_pos); }
+                '['|']' => {
+                    match move_cell(field, new_pos, direction, dest_cell) {
+                        Some(_) => { return Some(new_pos); },
+                        _ => { return None; }
+                    }
+                }
+                _ => { panic!("unexpected dest_cell {dest_cell}"); }
+            }
+        },
+        '[' => {
+            match direction {
+                '^'|'v' => {
+                    let right_new_pos = add(new_pos, directions[0]);
+                    let mut right_dest_cell = field[right_new_pos.y as usize][right_new_pos.x as usize];
+                    if dest_cell == '#' || right_dest_cell == '#' {
+                        return None;
+                    } else if dest_cell == '.' && right_dest_cell == '.' {
+                        field[new_pos.y as usize][new_pos.x as usize] = '[';
+                        field[right_new_pos.y as usize][right_new_pos.x as usize] = ']';
+                        field[pos.y as usize][pos.x as usize] = '.';
+                        field[pos.y as usize][pos.x as usize + 1] = '.';
+                        return Some(new_pos);
+                    } else {
+                        if dest_cell != '.' {
+                            match move_cell(&mut field.clone(), new_pos, direction, dest_cell) {
+                                None => { return None; },
+                                _ => { }
+                            }
+                        }
+                        if right_dest_cell == '[' {
+                            match move_cell(&mut field.clone(), right_new_pos, direction, right_dest_cell) {
+                                None => { return None; },
+                                _ => { }
+                            }
+                        }
+                        if dest_cell != '.' {
+                            move_cell(field, new_pos, direction, dest_cell);
+                        }
+                        right_dest_cell = field[right_new_pos.y as usize][right_new_pos.x as usize];
+                        if right_dest_cell != '.' {
+                            move_cell(field, right_new_pos, direction, right_dest_cell);
+                        }
+                        field[new_pos.y as usize][new_pos.x as usize] = '[';
+                        field[pos.y as usize][pos.x as usize] = '.';
+                        field[right_new_pos.y as usize][right_new_pos.x as usize] = ']';
+                        field[pos.y as usize][pos.x as usize + 1] = '.';
+                        return Some(new_pos);
+                    }
+                },
+                '>' => {
+                    let right_new_pos = add(new_pos, d);
+                    let right_dest_cell = field[right_new_pos.y as usize][right_new_pos.x as usize];
+                    match right_dest_cell {
+                        '#' => { return None; },
+                        '.' => {
+                            field[new_pos.y as usize][new_pos.x as usize] = '[';
+                            field[right_new_pos.y as usize][right_new_pos.x as usize] = ']';
+                            field[pos.y as usize][pos.x as usize] = '.';
+                            return Some(new_pos);
+                        },
+                        '[' => {
+                            match move_cell(field, right_new_pos, direction, right_dest_cell) {
+                                None => { return None; },
+                                _ => {
+                                    field[new_pos.y as usize][new_pos.x as usize] = '[';
+                                    field[right_new_pos.y as usize][right_new_pos.x as usize] = ']';
+                                    field[pos.y as usize][pos.x as usize] = '.';
+                                    return Some(new_pos);
+                                }
+                            }
+                        }
+                        _ => {
+                            print(field, pos);
+                            panic!("right dest cell impossible {right_dest_cell}")
+                        }
+                    }
+                }
+                _ => {
+                    print(field, pos);
+                    panic!("impossible direction {direction}")
+                }
+            };
+        },
+        ']' => {
+            match direction {
+                '^'|'v' => {
+                    let left_new_pos = add(new_pos, directions[2]);
+                    let mut left_dest_cell = field[left_new_pos.y as usize][left_new_pos.x as usize];
+                    if dest_cell == '#' || left_dest_cell == '#' {
+                        return None;
+                    } else if dest_cell == '.' && left_dest_cell == '.' {
+                        field[new_pos.y as usize][new_pos.x as usize] = ']';
+                        field[left_new_pos.y as usize][left_new_pos.x as usize] = '[';
+                        field[pos.y as usize][pos.x as usize] = '.';
+                        field[pos.y as usize][(pos.x - 1) as usize] = '.';
+                        return Some(new_pos);
+                    } else {
+                        if dest_cell != '.' {
+                            match move_cell(&mut field.clone(), new_pos, direction, dest_cell) {
+                                None => { return None; },
+                                _ => { }
+                            };
+                        }
+                        if left_dest_cell == ']' {
+                            match move_cell(&mut field.clone(), left_new_pos, direction, left_dest_cell) {
+                                None => { return None; },
+                                _ => { }
+                            };
+                        }
+                        if dest_cell != '.' {
+                            move_cell(field, new_pos, direction, dest_cell);
+                        }
+                        left_dest_cell = field[left_new_pos.y as usize][left_new_pos.x as usize];
+                        if left_dest_cell != '.' {
+                            move_cell(field, left_new_pos, direction, left_dest_cell);
+                        }
+                        field[new_pos.y as usize][new_pos.x as usize] = ']';
+                        field[left_new_pos.y as usize][left_new_pos.x as usize] = '[';
+                        field[pos.y as usize][pos.x as usize] = '.';
+                        field[pos.y as usize][(pos.x - 1) as usize] = '.';
+                        return Some(new_pos);
+                    }
+                },
+                '<' => {
+                    let left_new_pos = add(new_pos, d);
+                    let left_dest_cell = field[left_new_pos.y as usize][left_new_pos.x as usize];
+                    match left_dest_cell {
+                        '#' => { return None; },
+                        '.' => {
+                            field[new_pos.y as usize][new_pos.x as usize] = ']';
+                            field[left_new_pos.y as usize][left_new_pos.x as usize] = '[';
+                            field[pos.y as usize][pos.x as usize] = '.';
+                            return Some(new_pos);
+                        },
+                        ']' => {
+                            match move_cell(field, left_new_pos, direction, left_dest_cell) {
+                                None => { return None; },
+                                _ => {
+                                    field[new_pos.y as usize][new_pos.x as usize] = ']';
+                                    field[left_new_pos.y as usize][left_new_pos.x as usize] = '[';
+                                    field[pos.y as usize][pos.x as usize] = '.';
+                                    return Some(new_pos);
+                                }
+                            }
+                        },
+                        _ => {
+                            print(field, pos);
+                            panic!("left dest cell impossible {left_dest_cell}")
+                        }
+                    }
+                },
+                _ => { panic!("impossible direction {direction}"); }
+            }
+        },
+        _ => { panic!("cannot move {cell}")}
     }
-    if field[cursor.y as usize][cursor.x as usize] == '#' {
-        return robot;
-    }
-    for _ in boxes {
-        field[cursor.y as usize][cursor.x as usize] = 'O';
-        cursor = add(cursor, d_reverse);
-    }
-    field[cursor.y as usize][cursor.x as usize] = '.';
-    cursor
 }
 
 pub fn score_gps(field: &Vec<Vec<char>>) -> usize {
     field.iter().enumerate()
          .map(|(r, line)| line.iter().enumerate()
-             .map(|(c, cell)| if *cell == 'O' { 100 * r + c } else { 0 })
+             .map(|(c, cell)| if *cell == '[' { 100 * r + c } else { 0 })
              .sum::<usize>())
          .sum()
 }
 
 pub fn gps_boxes(field: &mut Vec<Vec<char>>, robot: Pos, moves: &str) -> usize {
     let mut current = robot;
+    print(field, current);
     for line in moves.split('\n') {
         for a_move in line.chars() {
-            current = move_robot(field, current, a_move);
+            // println!("MOVE : {a_move}");
+            match move_cell(field, current, a_move, '@') {
+                Some(new_pos) => {
+                    current = new_pos
+                },
+                _ => {}
+            }
+            // print(field, current);
         }
     }
+    print(field, robot);
     score_gps(field)
 }
 
@@ -85,7 +269,7 @@ mod tests {
 #...O..#
 #......#
 ########");
-        assert_eq!(move_robot(&mut field, robot, '<'), robot);
+        assert_eq!(move_cell(&mut field, robot, '<', '@'), None);
         (field, robot) = read("########
 #..O.O.#
 ##@.O..#
@@ -94,7 +278,7 @@ mod tests {
 #...O..#
 #......#
 ########");
-        assert_eq!(move_robot(&mut field, robot, '^'), Pos {x: 2, y: 1});
+        assert_eq!(move_cell(&mut field, robot, '^', '@'), Some(Pos {x: 4, y: 1}));
         assert_eq!(field, read("########
 #..O.O.#
 ##..O..#
@@ -103,7 +287,7 @@ mod tests {
 #...O..#
 #......#
 ########").0);
-        (field, robot) = read("########
+        (field, _) = read("########
 #.@O.O.#
 ##..O..#
 #...O..#
@@ -111,7 +295,8 @@ mod tests {
 #...O..#
 #......#
 ########");
-        assert_eq!(move_robot(&mut field, robot, '>'), Pos {x: 3, y: 1});
+        assert_eq!(move_cell(&mut field, Pos{x:5, y: 1}, '>', '@'), Some(Pos {x: 6, y: 1}));
+        assert_eq!(move_cell(&mut field, Pos{x:6, y: 1}, '>', '@'), Some(Pos {x: 7, y: 1}));
         assert_eq!(field, read("########
 #...OO.#
 ##..O..#
@@ -121,29 +306,44 @@ mod tests {
 #......#
 ########").0);
         (field, robot) = read("########
-#..@OO.#
-##..O..#
-#...O..#
-#.#.O..#
-#...O..#
+#......#
+##O@O..#
+#...OO.#
+#.##..##
+#......#
 #......#
 ########");
-        assert_eq!(move_robot(&mut field, robot, '>'), Pos {x: 4, y: 1});
-        assert_eq!(field, read("########
-#....OO#
-##..O..#
-#...O..#
-#.#.O..#
-#...O..#
-#......#
-########").0);
+        let mut new_pos = move_cell(&mut field, robot, '>', '@');
+        new_pos = move_cell(&mut field, new_pos.unwrap(), '>', '@');
+        new_pos = move_cell(&mut field, new_pos.unwrap(), '^', '@');
+        new_pos = move_cell(&mut field, new_pos.unwrap(), '>', '@');
+        new_pos = move_cell(&mut field, new_pos.unwrap(), 'v', '@');
+        // assert_eq!(new_pos, None);
+        // assert_eq!(new_pos, Some(Pos {x: 8, y: 3}));
+        assert_eq!(print(&field, new_pos.unwrap()),
+"################
+##............##
+####[]...@....##
+##.......[]...##
+##..####[][]####
+##............##
+##............##
+################
+");
+    }
+
+    #[test]
+    fn it_score_gps() {
+        let (field, _robot) = read("########
+#.O....#");
+        assert_eq!(score_gps(&field), 104);
     }
 
     #[test]
     fn it_works() {
         let (mut field, mut robot) = read(inputs::EXAMPLE_FIELD);
-        assert_eq!(gps_boxes(&mut field, robot, inputs::EXAMPLE_MOVES), 10092);
+        assert_eq!(gps_boxes(&mut field, robot, inputs::EXAMPLE_MOVES), 9021);
         (field, robot) = read(inputs::INPUT_FIELD);
-        assert_eq!(gps_boxes(&mut field, robot, inputs::INPUT_MOVES), 10092);
+        assert_eq!(gps_boxes(&mut field, robot, inputs::INPUT_MOVES), 1535509); // 1544522 to0 hight
     }
 }
