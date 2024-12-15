@@ -66,6 +66,7 @@ pub fn move_cell(field: &mut Vec<Vec<char>>, pos: Pos, direction: char, cell: ch
     let new_pos = add(pos, d);
     let dest_cell = field[new_pos.y as usize][new_pos.x as usize];
     match cell {
+        '.' => { return Some(new_pos); }
         '@' => {
             match dest_cell {
                 '#' => { return None; },
@@ -79,63 +80,60 @@ pub fn move_cell(field: &mut Vec<Vec<char>>, pos: Pos, direction: char, cell: ch
                 _ => { panic!("unexpected dest_cell {dest_cell}"); }
             }
         },
-        '[' => {
+        '['|']' => {
             match direction {
                 '^'|'v' => {
-                    let right_new_pos = add(new_pos, directions[0]);
-                    let mut right_dest_cell = field[right_new_pos.y as usize][right_new_pos.x as usize];
-                    if dest_cell == '#' || right_dest_cell == '#' {
+                    let pair_direction = if cell == '[' { directions[0] } else { directions[2] };
+                    let pair_new_pos = add(new_pos, pair_direction);
+                    let mut pair_dest_cell = field[pair_new_pos.y as usize][pair_new_pos.x as usize];
+                    if dest_cell == '#' || pair_dest_cell == '#' {
                         return None;
-                    } else if dest_cell == '.' && right_dest_cell == '.' {
-                        field[new_pos.y as usize][new_pos.x as usize] = '[';
-                        field[right_new_pos.y as usize][right_new_pos.x as usize] = ']';
+                    } else if dest_cell == '.' && pair_dest_cell == '.' {
+                        let pair_pos = add(pos, pair_direction);
+                        field[new_pos.y as usize][new_pos.x as usize] =  field[pos.y as usize][pos.x as usize];
+                        field[pair_new_pos.y as usize][pair_new_pos.x as usize] = field[pair_pos.y as usize][pair_pos.x as usize];
                         field[pos.y as usize][pos.x as usize] = '.';
-                        field[pos.y as usize][pos.x as usize + 1] = '.';
+                        field[pair_pos.y as usize][pair_pos.x as usize] = '.';
                         return Some(new_pos);
                     } else {
-                        if dest_cell != '.' {
-                            match move_cell(&mut field.clone(), new_pos, direction, dest_cell) {
-                                None => { return None; },
-                                _ => { }
-                            }
+                        match move_cell(&mut field.clone(), new_pos, direction, dest_cell) {
+                            None => { return None; },
+                            _ => { }
                         }
-                        if right_dest_cell == '[' {
-                            match move_cell(&mut field.clone(), right_new_pos, direction, right_dest_cell) {
-                                None => { return None; },
-                                _ => { }
-                            }
+                        match move_cell(&mut field.clone(), pair_new_pos, direction, pair_dest_cell) {
+                            None => { return None; },
+                            _ => { }
                         }
-                        if dest_cell != '.' {
-                            move_cell(field, new_pos, direction, dest_cell);
-                        }
-                        right_dest_cell = field[right_new_pos.y as usize][right_new_pos.x as usize];
-                        if right_dest_cell != '.' {
-                            move_cell(field, right_new_pos, direction, right_dest_cell);
-                        }
-                        field[new_pos.y as usize][new_pos.x as usize] = '[';
+
+                        move_cell(field, new_pos, direction, dest_cell);
+                        pair_dest_cell = field[pair_new_pos.y as usize][pair_new_pos.x as usize];
+                        move_cell(field, pair_new_pos, direction, pair_dest_cell);
+
+                        let pair_pos = add(pos, pair_direction);
+                        field[new_pos.y as usize][new_pos.x as usize] = field[pos.y as usize][pos.x as usize] ;
+                        field[pair_new_pos.y as usize][pair_new_pos.x as usize] = field[pair_pos.y as usize][pair_pos.x as usize];
                         field[pos.y as usize][pos.x as usize] = '.';
-                        field[right_new_pos.y as usize][right_new_pos.x as usize] = ']';
-                        field[pos.y as usize][pos.x as usize + 1] = '.';
+                        field[pair_pos.y as usize][pair_pos.x as usize] = '.';
                         return Some(new_pos);
                     }
                 },
-                '>' => {
-                    let right_new_pos = add(new_pos, d);
-                    let right_dest_cell = field[right_new_pos.y as usize][right_new_pos.x as usize];
-                    match right_dest_cell {
+                '>'|'<' => {
+                    let pair_new_pos = add(new_pos, d);
+                    let pair_dest_cell = field[pair_new_pos.y as usize][pair_new_pos.x as usize];
+                    match pair_dest_cell {
                         '#' => { return None; },
                         '.' => {
-                            field[new_pos.y as usize][new_pos.x as usize] = '[';
-                            field[right_new_pos.y as usize][right_new_pos.x as usize] = ']';
+                            field[pair_new_pos.y as usize][pair_new_pos.x as usize] = field[new_pos.y as usize][new_pos.x as usize];
+                            field[new_pos.y as usize][new_pos.x as usize] = field[pos.y as usize][pos.x as usize];
                             field[pos.y as usize][pos.x as usize] = '.';
                             return Some(new_pos);
                         },
-                        '[' => {
-                            match move_cell(field, right_new_pos, direction, right_dest_cell) {
+                        '['|']' => {
+                            match move_cell(field, pair_new_pos, direction, pair_dest_cell) {
                                 None => { return None; },
                                 _ => {
-                                    field[new_pos.y as usize][new_pos.x as usize] = '[';
-                                    field[right_new_pos.y as usize][right_new_pos.x as usize] = ']';
+                                    field[pair_new_pos.y as usize][pair_new_pos.x as usize] = field[new_pos.y as usize][new_pos.x as usize];
+                                    field[new_pos.y as usize][new_pos.x as usize] = field[pos.y as usize][pos.x as usize];
                                     field[pos.y as usize][pos.x as usize] = '.';
                                     return Some(new_pos);
                                 }
@@ -143,7 +141,7 @@ pub fn move_cell(field: &mut Vec<Vec<char>>, pos: Pos, direction: char, cell: ch
                         }
                         _ => {
                             print(field, pos);
-                            panic!("right dest cell impossible {right_dest_cell}")
+                            panic!("pair dest cell impossible {pair_dest_cell}")
                         }
                     }
                 }
@@ -152,77 +150,6 @@ pub fn move_cell(field: &mut Vec<Vec<char>>, pos: Pos, direction: char, cell: ch
                     panic!("impossible direction {direction}")
                 }
             };
-        },
-        ']' => {
-            match direction {
-                '^'|'v' => {
-                    let left_new_pos = add(new_pos, directions[2]);
-                    let mut left_dest_cell = field[left_new_pos.y as usize][left_new_pos.x as usize];
-                    if dest_cell == '#' || left_dest_cell == '#' {
-                        return None;
-                    } else if dest_cell == '.' && left_dest_cell == '.' {
-                        field[new_pos.y as usize][new_pos.x as usize] = ']';
-                        field[left_new_pos.y as usize][left_new_pos.x as usize] = '[';
-                        field[pos.y as usize][pos.x as usize] = '.';
-                        field[pos.y as usize][(pos.x - 1) as usize] = '.';
-                        return Some(new_pos);
-                    } else {
-                        if dest_cell != '.' {
-                            match move_cell(&mut field.clone(), new_pos, direction, dest_cell) {
-                                None => { return None; },
-                                _ => { }
-                            };
-                        }
-                        if left_dest_cell == ']' {
-                            match move_cell(&mut field.clone(), left_new_pos, direction, left_dest_cell) {
-                                None => { return None; },
-                                _ => { }
-                            };
-                        }
-                        if dest_cell != '.' {
-                            move_cell(field, new_pos, direction, dest_cell);
-                        }
-                        left_dest_cell = field[left_new_pos.y as usize][left_new_pos.x as usize];
-                        if left_dest_cell != '.' {
-                            move_cell(field, left_new_pos, direction, left_dest_cell);
-                        }
-                        field[new_pos.y as usize][new_pos.x as usize] = ']';
-                        field[left_new_pos.y as usize][left_new_pos.x as usize] = '[';
-                        field[pos.y as usize][pos.x as usize] = '.';
-                        field[pos.y as usize][(pos.x - 1) as usize] = '.';
-                        return Some(new_pos);
-                    }
-                },
-                '<' => {
-                    let left_new_pos = add(new_pos, d);
-                    let left_dest_cell = field[left_new_pos.y as usize][left_new_pos.x as usize];
-                    match left_dest_cell {
-                        '#' => { return None; },
-                        '.' => {
-                            field[new_pos.y as usize][new_pos.x as usize] = ']';
-                            field[left_new_pos.y as usize][left_new_pos.x as usize] = '[';
-                            field[pos.y as usize][pos.x as usize] = '.';
-                            return Some(new_pos);
-                        },
-                        ']' => {
-                            match move_cell(field, left_new_pos, direction, left_dest_cell) {
-                                None => { return None; },
-                                _ => {
-                                    field[new_pos.y as usize][new_pos.x as usize] = ']';
-                                    field[left_new_pos.y as usize][left_new_pos.x as usize] = '[';
-                                    field[pos.y as usize][pos.x as usize] = '.';
-                                    return Some(new_pos);
-                                }
-                            }
-                        },
-                        _ => {
-                            print(field, pos);
-                            panic!("left dest cell impossible {left_dest_cell}")
-                        }
-                    }
-                },
-                _ => { panic!("impossible direction {direction}"); }
-            }
         },
         _ => { panic!("cannot move {cell}")}
     }
