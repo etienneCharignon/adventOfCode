@@ -1,6 +1,5 @@
 mod inputs;
 
-
 #[derive(Debug, PartialEq, Copy, Clone, Hash, Eq)]
 pub struct Pos {
    x: i32,
