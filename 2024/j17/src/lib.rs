@@ -11,41 +11,20 @@ pub fn combo(operand: u64, registers: &Vec<u64>) -> u64 {
 pub fn run(initial_registers: &Vec<u64>, program: &Vec<u64>) -> Vec<u64> {
     let mut registers = initial_registers.clone();
     let mut output: Vec<u64> = vec![];
-    let mut ip: usize = 0;
-    loop {
-        if ip >= program.len() {
-            break;
-        }
-        let opcode = program[ip];
-        let operand = program[ip + 1];
-        ip += 2;
+    let mut pc: usize = 0;
+    while pc < program.len() {
+        let opcode = program[pc];
+        let operand = program[pc + 1];
+        pc += 2;
         match opcode {
-            0 => { // adv
-                registers[0] = registers[0] / 2_u64.pow(combo(operand, &registers) as u32);
-            },
-            1 => { // bxl
-                registers[1] ^= operand;
-            },
-            2 => { // bst
-                registers[1] = combo(operand, &registers) % 8;
-            },
-            3 => { // jnz
-                if registers[0] != 0 {
-                    ip = operand as usize;
-                }
-            },
-            4 => { // bxc
-                registers[1] ^= registers[2];
-            },
-            5 => { // out
-                output.push(combo(operand, &registers) % 8);
-            },
-            6 => { // bdv
-                registers[1] = registers[0] / 2_u64.pow(combo(operand, &registers) as u32);
-            },
-            7 => { // cdv
-                registers[2] = registers[0] / 2_u64.pow(combo(operand, &registers) as u32);
-            },
+            0 /* adv */ => registers[0] = registers[0] >> combo(operand, &registers),
+            1 /* bxl */ => registers[1] ^= operand,
+            2 /* bst */ => registers[1] = combo(operand, &registers) % 8,
+            3 /* jnz */ => if registers[0] != 0 { pc = operand as usize; },
+            4 /* bxc */ => registers[1] ^= registers[2],
+            5 /* out */ => output.push(combo(operand, &registers) % 8),
+            6 /* bdv */ => registers[1] = registers[0] >> combo(operand, &registers),
+            7 /* cdv */ => registers[2] = registers[0] >> combo(operand, &registers),
             _ => { panic!("unknow opcode {}", opcode)}
         }
     }
@@ -72,28 +51,24 @@ pub fn solve(program: &Vec<u64>, solution: u64, i: usize) -> Option<u64> {
     }
     if i == 0 {
         for a in 1..=1023 {
-            let output = rprogram(a);
+            let output = run(&vec![a,0,0], program);
             if output.len() > 0 && output[0] == program[i] {
                 println!("0 {a:o} : {:?}", output);
-                match solve(program, a>>3, i + 1) {
-                    Some(res) => { return Some((res << 3) + (a % 8)); }
-                    None => {}
+                if let Some(res) = solve(program, a>>3, i+1) {
+                    return Some((res << 3) + (a % 8));
                 }
             }
         }
     } else {
         for highbits in 0..=7 {
             let a = solution | (highbits << 7);
-            let output = rprogram(a);
+            let output = run(&vec![a,0,0], program);
             if output.len() > 0 && output[0] == program[i] && (output.len() + i <= program.len()) {
                 println!("{i} {a:o} : {:?} ({:?})", output, output.len() > 0 && output[0] == program[i] );
-                match solve(program, a>>3, i + 1) {
-                    Some(res) => {
-                        let found = (res << 3) + (a % 8);
-                        println!("found {found:o}");
-                        return Some(found);
-                    }
-                    None => {}
+                if let Some(res) = solve(program, a>>3, i+1) {
+                    let found = (res << 3) + (a % 8);
+                    println!("found {found:o}");
+                    return Some(found);
                 }
             }
         }
@@ -150,6 +125,7 @@ mod tests {
 
     #[test]
     fn it_works_part2() {
+        assert_eq!(solve(&vec![0,3,5,4,3,0], 0, 0), Some(117440));
         assert_eq!(solve(&inputs::INPUT_PROGRAM, 0, 0), Some(202356708354602));
     }
 
