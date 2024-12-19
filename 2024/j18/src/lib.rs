@@ -2,7 +2,6 @@ mod inputs;
 
 use lazy_static::lazy_static;
 use regex::Regex;
-use std::collections::HashMap;
 use std::collections::HashSet;
 
 lazy_static! {
@@ -32,7 +31,7 @@ pub fn read(input: &str, time: usize) -> HashSet<Pos> {
     ) {
         memory.insert(Pos{ x: px, y: py });
         count += 1;
-        if count > time {
+        if count == time {
             break;
         }
     }
@@ -44,47 +43,71 @@ pub fn h(pos: &Pos, size: i32) -> i32 {
     (size - pos.x) + (size - pos.y)
 }
 
-// pub fn shortest_path(o: Cell, maze: &Vec<Vec<char>>, visited: &mut HashSet<Reindeer>, _shortest: usize) -> usize {
-pub fn find_path_size(memory: HashSet<Pos>, size: i32) -> i32 {
-    let origin = Pos { x: 0, y:0 };
+pub fn print(memory: &HashSet<Pos>, size: i32, visited: &HashSet<Pos>) {
+    let mut output = String::new();
+    for r in 0..size {
+        for c in 0..size {
+            let current = Pos { x: c, y: r };
+            if memory.contains(&current) {
+                output.push_str("#");
+            }
+            else if visited.contains(&current) {
+                output.push_str("O");
+            }
+            else {
+                output.push_str(".");
+            }
+        }
+        output.push_str("\n");
+    }
+    println!("{}", output);
+}
+
+pub fn find_path(memory: &HashSet<Pos>, size: i32, origin: Pos, visited: &mut HashSet<Pos>) -> i32 {
     let mut open: Vec<Pos> = vec![];
     open.push(origin);
-    let mut came_from: HashMap<Pos, Pos> = HashMap::new();
-    let mut g_score: HashMap<Pos, i32> = HashMap::new();
-    g_score.insert(origin, 0);
-    let mut f_score: HashMap<Pos, i32> = HashMap::new();
-    f_score.insert(origin, h(&origin, size));
-
+    visited.insert(origin);
+    let mut iteration = 1;
+    let mut next_generation: Vec<Pos> = vec![];
     while !open.is_empty() {
-        open.sort_by(|cell1, cell2| {
-            let f_score1 = f_score.get(cell1).unwrap_or(&i32::MAX);
-            let f_score2 = f_score.get(cell2).unwrap_or(&i32::MAX);
-            f_score2.cmp(&f_score1)
-        });
-        let current = open.pop().unwrap();
-
-        if current.x == size - 1 && current.y == size - 1  {
-            return 0; // reconstruct_path(cameFrom, current)
-        }
-
+        let o = open.remove(0);
+        println!("\norigin : {o:?}");
+        // print(memory, size, visited);
         for d in DIR.iter() {
-            let next = add(current, *d);
+            let next = add(o, *d);
+            println!("next : {next:?}");
+            if next.x < 0 || next.y < 0 || next.x >= size || next.y >= size {
+                continue;
+            }
+            if visited.contains(&next) {
+                continue;
+            }
+            visited.insert(next);
             if memory.contains(&next) {
                 continue;
             }
-            let tentative_g_score = g_score.get(&current).unwrap_or(&(i32::MAX - 1)) + 1;
-            if tentative_g_score < *g_score.get(&next).unwrap_or(&i32::MAX) {
-                came_from.insert(next, current);
-                g_score.insert(next, tentative_g_score);
-                f_score.insert(next, tentative_g_score + h(&next, size));
-                if ! open.contains(&next) {
-                    open.push(next);
-                }
+
+            if next.x == size - 1 && next.y == size - 1 {
+                return iteration;
             }
+
+            next_generation.push(next);
         }
-        println!("{:?}", open);
+        if open.is_empty() {
+            iteration += 1;
+            open.extend(next_generation);
+            next_generation = vec![];
+        }
     }
     0
+}
+
+pub fn find_path_size(memory: HashSet<Pos>, size: i32) -> i32 {
+    let origin = Pos { x: 0, y:0 };
+    let mut visited: HashSet<Pos> = HashSet::new();
+
+    print(&memory, size, &visited);
+    find_path(&memory, size, origin, &mut visited)
 }
 
 #[cfg(test)]
@@ -93,6 +116,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        assert_eq!(find_path_size(read(inputs::EXAMPLE, 12), 6), 22);
+        assert_eq!(find_path_size(read(inputs::EXAMPLE, 12), 7), 22);
+        assert_eq!(find_path_size(read(inputs::INPUT, 1024), 71), 260);
     }
 }
