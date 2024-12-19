@@ -19,21 +19,16 @@ pub fn add(a: Pos, b: Pos) -> Pos {
     Pos {x: a.x + b.x, y: a.y + b.y }
 }
 
-pub fn read(input: &str, time: usize) -> HashSet<Pos> {
-    let mut memory = HashSet::new();
+pub fn read(input: &str) -> Vec<Pos> {
+    let mut memory = vec![];
     let mut matches = RE.find_iter(input)
         .map(|m| m.as_str().parse::<i32>().unwrap());
 
-    let mut count = 0;
     while let (Some(px), Some(py)) = (
         matches.next(),
         matches.next()
     ) {
-        memory.insert(Pos{ x: px, y: py });
-        count += 1;
-        if count == time {
-            break;
-        }
+        memory.push(Pos{ x: px, y: py });
     }
     println!("memory size: {}", memory.len());
     memory
@@ -71,11 +66,11 @@ pub fn find_path(memory: &HashSet<Pos>, size: i32, origin: Pos, visited: &mut Ha
     let mut next_generation: Vec<Pos> = vec![];
     while !open.is_empty() {
         let o = open.remove(0);
-        println!("\norigin : {o:?}");
+        // println!("\norigin : {o:?}");
         // print(memory, size, visited);
         for d in DIR.iter() {
             let next = add(o, *d);
-            println!("next : {next:?}");
+            // println!("next : {next:?}");
             if next.x < 0 || next.y < 0 || next.x >= size || next.y >= size {
                 continue;
             }
@@ -99,15 +94,25 @@ pub fn find_path(memory: &HashSet<Pos>, size: i32, origin: Pos, visited: &mut Ha
             next_generation = vec![];
         }
     }
+    // print(memory, size, &HashSet::new());
     0
 }
 
-pub fn find_path_size(memory: HashSet<Pos>, size: i32) -> i32 {
+pub fn find_first_blocking(input: &str, size: i32) -> Option<Pos> {
     let origin = Pos { x: 0, y:0 };
-    let mut visited: HashSet<Pos> = HashSet::new();
 
-    print(&memory, size, &visited);
-    find_path(&memory, size, origin, &mut visited)
+    // print(&memory, size, &visited);
+    let corruptions = read(input);
+    for t in 10..corruptions.len() {
+        let mut visited: HashSet<Pos> = HashSet::new();
+        let memory: HashSet<Pos> = corruptions[..t].iter().cloned().collect();
+        // println!("{t} : {memory:?}");
+        if find_path(&memory, size, origin, &mut visited) == 0 {
+            println!("{t}");
+            return Some(corruptions[t - 1]);
+        }
+    }
+    None
 }
 
 #[cfg(test)]
@@ -116,7 +121,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        assert_eq!(find_path_size(read(inputs::EXAMPLE, 12), 7), 22);
-        assert_eq!(find_path_size(read(inputs::INPUT, 1024), 71), 260);
+        assert_eq!(find_first_blocking(inputs::EXAMPLE, 7), Some(Pos {x: 6, y: 1}));
+        assert_eq!(find_first_blocking(inputs::INPUT, 71), Some(Pos {x:24, y: 48}));
     }
 }
