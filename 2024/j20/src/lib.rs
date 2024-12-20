@@ -84,32 +84,34 @@ pub fn print(maze: &Vec<Vec<char>>, visited: &Vec<Pos>) {
     println!("{}", output);
 }
 
-pub fn find_shortcut(pos: &Pos, path: &[Pos], maze: &Vec<Vec<char>>) -> Vec<usize> {
-    let optional_short_cuts: Vec<Pos> = DIR.iter().filter(|d| {
-        cell(add(*pos, d), maze) == '#'
-    }).map(|d| {
-        add(add(*pos, d), d)
-    }).collect();
+pub fn manathan_distance(p1: &Pos, p2: &Pos) -> usize {
+    ((p1.x - p2.x).abs() + (p1.y - p2.y).abs()) as usize
+}
+
+pub fn find_shortcut(pos: &Pos, path: &[Pos], min_save: i32) -> Vec<usize> {
     let mut shortcuts = vec![];
-    println!("optionnal: {optional_short_cuts:?}");
     for (i, p) in path.iter().enumerate() {
-        if optional_short_cuts.contains(p) {
-            println!("S: {pos:?}, E: {p:?} => {}", i - 1);
-            shortcuts.push(i-1);
+        let d = manathan_distance(p, pos);
+        if d > 1 && d <= 20 {
+            let save = i as i32 - d as i32 + 1;
+            if save >= min_save {
+                // println!("S: {pos:?}, E: {p:?}, {d} => {}", save);
+                shortcuts.push(save as usize);
+            }
         }
     }
     shortcuts
 }
 
 pub fn count_cheats(path_maze: (Vec<Pos>, Vec<Vec<char>>), min_save: usize) -> usize {
-    let (path, maze) = path_maze;
+    let (path, _maze) = path_maze;
     let mut saves: Vec<usize> = vec![];
     for (i, pos) in path.iter().enumerate() {
-        let distances = find_shortcut(pos, &path[(i + 1)..], &maze);
+        let distances = find_shortcut(pos, &path[(i + 1)..], min_save as i32);
         saves.extend(distances);
     }
-    println!("{saves:?}");
-    saves.into_iter().filter(|d| *d >= min_save).count()
+    // println!("{saves:?}");
+    saves.len()
 }
 
 #[cfg(test)]
@@ -122,8 +124,17 @@ mod tests {
     }
 
     #[test]
+    fn it_compute_manathan_distance() {
+        assert_eq!(manathan_distance(&Pos {x: 0, y: 0}, &Pos{x: 1, y:0}), 1);
+        assert_eq!(manathan_distance(&Pos {x: 1, y: 0}, &Pos{x: 0, y:0}), 1);
+        assert_eq!(manathan_distance(&Pos {x: 0, y: 0}, &Pos{x: 5, y:0}), 5);
+        assert_eq!(manathan_distance(&Pos {x: 0, y: 1}, &Pos{x: 0, y:0}), 1);
+        assert_eq!(manathan_distance(&Pos {x: 1, y: 1}, &Pos{x: 0, y:0}), 2);
+    }
+
+    #[test]
     fn it_works() {
-        assert_eq!(count_cheats(read_path(inputs::EXAMPLE), 20), 5);
-        assert_eq!(count_cheats(read_path(inputs::INPUT), 100), 5);
+        assert_eq!(count_cheats(read_path(inputs::EXAMPLE), 76), 3);
+        assert_eq!(count_cheats(read_path(inputs::INPUT), 100), 1502);
     }
 }
