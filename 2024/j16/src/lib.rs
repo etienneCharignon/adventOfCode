@@ -60,6 +60,20 @@ pub fn print(maze: &Vec<Vec<char>>, visited: &HashSet<Reindeer>) {
     println!("{}", output);
 }
 
+pub fn print_spots(maze: &Vec<Vec<char>>, spots: &HashSet<Pos>) {
+    let mut maze_visisted = maze.clone();
+    for r in spots {
+        maze_visisted[r.y as usize][r.x as usize] = 'X';
+    }
+    let mut output = String::new();
+    for line in maze_visisted {
+        let str: String = line.iter().collect();
+        output.push_str(&str);
+        output.push_str("\n");
+    }
+    println!("{}", output);
+}
+
 pub fn find_shortest(c: &Cell, open: &Vec<Cell>) -> bool {
     for cell in open {
         if cell.r == c.r && cell.c < c.c {
@@ -69,26 +83,39 @@ pub fn find_shortest(c: &Cell, open: &Vec<Cell>) -> bool {
     false
 }
 
-pub fn add_spot(c: &Cell, came_from: &MultiMap<Cell, Cell>, spots: &mut HashSet<Cell>) {
-    if spots.contains(c) {
-        return;
-    }
-    spots.insert(*c);
-    if let Some(values) = came_from.get_vec(&c) {
-        let filtered: Vec<&Cell> = values.iter().filter(|&v| {
-            if v.r.p != c.r.p { v.c+1 == c.c }
-            else { v.c + 1000 == c.c }
-        }).collect();
-        for child in filtered {
-            add_spot(child, came_from, spots);
+pub fn add_spot(c: &Cell, came_from: &MultiMap<Reindeer, Cell>, spots: &mut HashSet<Pos>, maze: &Vec<Vec<char>>) {
+    spots.insert(c.r.p);
+    if let Some(values) = came_from.get_vec(&c.r) {
+        for from in values {
+            // print_spots(maze, spots);
+            add_spot(&from, came_from, spots, maze);
         }
     }
+    else {
+        // println!("Arrivé : {c:?}");
+    }
+    // println!("{spots:?}");
+}
+
+pub fn add_to_came_from(came_from: &mut MultiMap<Reindeer, Cell>, to: Cell, from: Cell) {
+    if let Some(value) = came_from.get(&to.r) {
+        if value.c > to.c {
+            came_from.remove(&to.r);
+        }
+    }
+    let from_with_to_cost = Cell { r: from.r, c: to.c };
+    if let Some(values) = came_from.get_vec(&to.r) {
+        if values.contains(&from_with_to_cost) {
+            return;
+        }
+    }
+    came_from.insert(to.r, from_with_to_cost);
 }
 
 pub fn shortest_path(o: Cell, maze: &Vec<Vec<char>>, visited: &mut HashSet<Reindeer>, _shortest: usize) -> usize {
     let mut open: Vec<Cell> = vec![];
-    let mut came_from: MultiMap<Cell, Cell> = MultiMap::new();
-    let mut spots_cells: HashSet<Cell> = HashSet::new();
+    let mut came_from: MultiMap<Reindeer, Cell> = MultiMap::new();
+    let mut spots: HashSet<Pos> = HashSet::new();
     open.push(o);
     while !open.is_empty() {
         open.sort_by(|cell1, cell2| cell2.c.cmp(&cell1.c));
@@ -97,9 +124,9 @@ pub fn shortest_path(o: Cell, maze: &Vec<Vec<char>>, visited: &mut HashSet<Reind
         // print(maze, visited);
 
         if cell(current.r.p, maze) == 'E'  {
-            // println!("{:?}", came_from.get_vec(&current.r.p));
-            add_spot(&current, &came_from, &mut spots_cells);
-            continue;
+            println!("{:?}", came_from.keys().len());
+            add_spot(&current, &came_from, &mut spots, maze);
+            break;
         }
 
         let next = add(current.r.p, current.r.d);
@@ -107,8 +134,8 @@ pub fn shortest_path(o: Cell, maze: &Vec<Vec<char>>, visited: &mut HashSet<Reind
             let new_r = Reindeer { p: next, d: current.r.d };
             let new_cell = Cell { r: new_r, c: current.c + 1 };
             if ! (visited.contains(&new_r)) {
-                println!("inserting {:?} -> {:?}", current, new_r.p);
-                came_from.insert(new_cell, current);
+                // println!("inserting {:?} -> {:?} with cost {}", new_r, current.r, new_cell.c);
+                add_to_came_from(&mut came_from, new_cell, current);
                 open.push(new_cell);
             }
         }
@@ -116,16 +143,11 @@ pub fn shortest_path(o: Cell, maze: &Vec<Vec<char>>, visited: &mut HashSet<Reind
             let new_r = Reindeer { p: current.r.p, d };
             let new_cell = Cell { r: new_r, c: current.c + 1000 };
             if ! (visited.contains(&new_r)) {
-//                 println!("inserting {:?} -> {:?}", current, new_r.p);
-                came_from.insert(new_cell, current);
+                // println!("inserting {:?} -> {:?}", current, new_r.p);
+                add_to_came_from(&mut came_from, new_cell, current);
                 open.push(new_cell);
             }
         }
-    }
-    println!("{:?}", came_from);
-    let mut spots: HashSet<Pos> = HashSet::new();
-    for cell in spots_cells {
-        spots.insert(cell.r.p);
     }
     spots.len()
 }
@@ -147,7 +169,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn it_works_example2() {
         let maze = read(inputs::EXAMPLE2);
         let height = maze.len() as i32;
@@ -155,10 +176,9 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn it_works() {
         let maze = read(inputs::INPUT);
         let height = maze.len() as i32;
-        assert_eq!(shortest_path(Cell{ r: Reindeer { p: Pos{x:1, y:height - 2}, d: DIR[0] }, c: 0 }, &maze, &mut HashSet::new(), 94436), 572); // 573 is to hight, 449
+        assert_eq!(shortest_path(Cell{ r: Reindeer { p: Pos{x:1, y:height - 2}, d: DIR[0] }, c: 0 }, &maze, &mut HashSet::new(), 94436), 481); // 573 is to hight, 449
     }
 }
