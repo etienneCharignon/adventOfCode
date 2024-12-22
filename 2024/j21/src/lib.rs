@@ -3,6 +3,7 @@ mod inputs;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::cmp::min;
+use std::collections::HashSet;
 
 lazy_static! {
     static ref RE: Regex = Regex::new(r"([0-9]+)").unwrap();
@@ -94,20 +95,39 @@ pub fn move_to_key(from: Pos, to:Pos, h_first: bool, blank: Pos) -> String {
     sequence
 }
 
+pub fn add_shortests(sequences: Vec<String>, shortests: HashSet<String>) -> Vec<String> {
+    let mut new_sequences = vec![];
+    for sequence in sequences {
+        for shortest in &shortests {
+            new_sequences.push(sequence.clone() + &shortest);
+        }
+    }
+    new_sequences
+}
+
 pub fn sequence_to_pad(to_pos: fn(char) -> Pos, blank: Pos, received_shortests: Vec<String>) -> Vec<String> {
+    let mut shortest = HashSet::new();
     let mut current: char = 'A';
-    let mut shortest = vec![];
     let mut min_len = usize::MAX;
     for code in received_shortests {
-        for priority in [true, false] {
-            let mut s = String::new();
-            for dest in code.chars() {
+        let mut sequences = vec![];
+        sequences.push(String::new());
+        for dest in code.chars() {
+            let mut shortest_for_char = HashSet::new();
+            let mut min_for_char = usize::MAX;
+            for priority in [true, false] {
+                let mut s = String::new();
                 s += &move_to_key(to_pos(current), to_pos(dest), priority, blank);
                 s += "A";
-                current = dest;
+                min_for_char = min(min_for_char, s.len());
+                shortest_for_char.insert(s);
             }
-            min_len = min(min_len, s.len());
-            shortest.push(s);
+            sequences = add_shortests(sequences, shortest_for_char);
+            current = dest;
+        }
+        for sequence in sequences {
+            min_len = min(min_len, sequence.len());
+            shortest.insert(sequence);
         }
     }
     shortest.into_iter().filter(|sequence| sequence.len() == min_len).collect()
@@ -185,7 +205,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        // assert_eq!(complexities(inputs::EXAMPLE), 126384);
+        assert_eq!(complexities(inputs::EXAMPLE), 126384);
         assert_eq!(complexities(inputs::INPUT), 112689);
     }
 }
