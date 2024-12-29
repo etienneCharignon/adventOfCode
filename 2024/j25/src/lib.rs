@@ -1,42 +1,38 @@
 mod inputs;
 
 pub fn read_element(lines: Vec<&str>) -> Vec<usize> {
-    let mut element = vec![0,0,0,0,0];
-    for line in &lines[1..] {
-        for (i, c) in line.chars().enumerate() {
-            if c == '#' {
-                element[i] += 1;
-            }
-        }
-    }
-    element
+    lines[1..].iter()
+        .flat_map(|line| line.chars().enumerate())
+        .filter(|(_column, char)| *char == '#')
+        .fold(vec![0,0,0,0,0], |mut element, (column, _)| {
+            element[column] += 1;
+            element
+        })
 }
 
 pub fn matches(key: &Vec<usize>, lock: &Vec<usize>) -> bool {
-    key.iter().zip(lock.iter()).all(|(k, l)| k + l <= 5)
+    key.iter()
+        .zip(lock.iter())
+        .all(|(k, l)| k + l <= 5)
 }
 
 pub fn count_match(input: &str)-> usize {
     let mut keys = vec![];
     let mut locks = vec![];
-    for element in input.split("\n\n") {
-        let lines: Vec<&str> = element.split('\n').collect();
-        if lines[0] == "#####" {
-            locks.push(read_element(lines));
-        }
-        else {
-            keys.push(read_element(lines.into_iter().rev().collect()));
-        }
-    }
-    let mut count= 0;
-    for key in keys {
-        for lock in &locks {
-            if matches(&key, &lock) {
-                count += 1;
+    input.split("\n\n")
+        .map(|element| element.split('\n').collect())
+        .for_each(|lines: Vec<&str>| {
+            if lines[0] == "#####" {
+                locks.push(read_element(lines));
             }
-        }
-    }
-    count
+            else {
+                keys.push(read_element(lines.into_iter().rev().collect()));
+            }
+        });
+    keys.iter()
+        .flat_map(|key| locks.iter().map(move |lock| (key, lock)))
+        .filter(|(key, lock)| matches(key, lock))
+        .count()
 }
 
 #[cfg(test)]
