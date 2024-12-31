@@ -52,10 +52,10 @@ pub fn move_to_key(from: Pos, to:Pos, h_first: bool, blank: Pos) -> String {
     // println!("{from:?}, {to:?}");
     let mut sequence = String::new();
     let mut start_with_h =  h_first;
-    if from.y == blank.y {
+    if from.y == blank.y && to.x == blank.x {
         start_with_h = false;
     }
-    if from.x == blank.x {
+    else if from.x == blank.x && to.y == blank.y {
         start_with_h = true;
     }
     if start_with_h {
@@ -95,49 +95,89 @@ pub fn move_to_key(from: Pos, to:Pos, h_first: bool, blank: Pos) -> String {
     sequence
 }
 
-pub fn add_shortests(sequences: Vec<String>, shortests: HashSet<String>) -> Vec<String> {
+pub fn append_char_sequences(sequences: Vec<String>, char_sequences: HashSet<String>) -> Vec<String> {
     let mut new_sequences = vec![];
     for sequence in sequences {
-        for shortest in &shortests {
-            new_sequences.push(sequence.clone() + &shortest);
+        for char_sequence in &char_sequences {
+            new_sequences.push(sequence.clone() + &char_sequence);
         }
     }
     new_sequences
 }
 
-pub fn sequence_to_pad(to_pos: fn(char) -> Pos, blank: Pos, received_shortests: Vec<String>) -> Vec<String> {
-    let mut shortest = HashSet::new();
+pub fn sequence_to_pad(to_pos: fn(char) -> Pos, blank: Pos, codes: HashSet<String>) -> HashSet<String> {
+    let mut all_sequences = HashSet::new();
     let mut current: char = 'A';
-    let mut min_len = usize::MAX;
-    for code in received_shortests {
+    for code in codes {
         let mut sequences = vec![];
         sequences.push(String::new());
         for dest in code.chars() {
-            let mut shortest_for_char = HashSet::new();
-            let mut min_for_char = usize::MAX;
+            let mut all_sequences_for_char = HashSet::new();
             for priority in [true, false] {
                 let mut s = String::new();
                 s += &move_to_key(to_pos(current), to_pos(dest), priority, blank);
                 s += "A";
-                min_for_char = min(min_for_char, s.len());
-                shortest_for_char.insert(s);
+                all_sequences_for_char.insert(s);
             }
-            sequences = add_shortests(sequences, shortest_for_char);
+            sequences = append_char_sequences(sequences, all_sequences_for_char);
             current = dest;
         }
         for sequence in sequences {
-            min_len = min(min_len, sequence.len());
-            shortest.insert(sequence);
+            all_sequences.insert(sequence);
         }
     }
-    shortest.into_iter().filter(|sequence| sequence.len() == min_len).collect()
+    all_sequences
+}
+
+pub fn unitary_move(from: char, to: char, to_pos: fn(char) -> Pos, blank: Pos) -> HashSet<String> {
+    let mut shortest = HashSet::new();
+    let mut min_len = usize::MAX;
+
+    let mut sequences = vec![];
+    sequences.push(String::new());
+    let mut shortest_for_char = HashSet::new();
+    for priority in [true, false] {
+        let mut s = String::new();
+        s += &move_to_key(to_pos(from), to_pos(to), priority, blank);
+        s += "A";
+        shortest_for_char.insert(s);
+    }
+    sequences = append_char_sequences(sequences, shortest_for_char);
+
+    for sequence in sequences {
+        min_len = min(min_len, sequence.len());
+        shortest.insert(sequence);
+    }
+
+    // shortest.into_iter().filter(|sequence| sequence.len() == min_len).collect()
+    shortest
 }
 
 pub fn final_sequence(code: &str) -> String {
-    sequence_to_pad(directionnal_pos, Pos {x: 0, y: 0},
+    let all_sequences = sequence_to_pad(directionnal_pos, Pos {x: 0, y: 0},
         sequence_to_pad(directionnal_pos, Pos {x: 0, y: 0},
-            sequence_to_pad(numeric_pos, Pos {x: 0, y: 3},
-                vec![String::from(code)]))).iter().next().unwrap().to_string()
+            sequence_to_pad(numeric_pos, Pos {x: 0, y: 3}, to_set(vec![code]))));
+    // println!("{all_sequences:?}");
+    all_sequences.iter()
+        .fold(String::from(""),
+              |shortest, sequence|
+              if shortest.len() > 0 && shortest.len() <= sequence.len() {
+                  shortest
+              } else {
+                  sequence.clone()
+              })
+
+//     let digits: Vec<char> = format!("A{code}").chars().collect();
+//     let mut result = String::new();
+//     for i in 0..code.len() {
+//         result += sequence_to_pad(directionnal_pos, Pos {x: 0, y: 0},
+//             sequence_to_pad(directionnal_pos, Pos {x: 0, y: 0},
+//                 unitary_move(digits[i], digits[i+1], numeric_pos, Pos {x: 0, y: 3})))
+//             .iter()
+//             .fold(&String::from("<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A"),
+//                  |shortest, sequence| if shortest.len() <= sequence.len() { shortest } else { sequence });
+//         }
+//     result
 }
 
 pub fn complexity(code: &str) -> usize {
@@ -162,6 +202,16 @@ pub fn complexities(input: &str) -> usize {
 // example 379A: <v<A>>^AvA^A<vA<AA>>^AAvA<^A>AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A
 // my      379A: <<vA>>^AvA^A<<vAA>A>^AAvA<^A>AAvA^A<vA>^AA<A>A<<vA>A>^AAAvA<^A>A
 
+// A<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A
+// A  v <<   A >>  ^ A   <   A > A  v  A  <   ^ AA > A   < v  AAA >  ^ A
+// A         <       A       ^   A     >        ^^   A        vvv      A
+// A                 0           2                   9                 A
+
+pub fn to_set(vec: Vec<&str>) -> HashSet<String> {
+    vec.into_iter().map(String::from).collect()
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -179,9 +229,36 @@ mod tests {
     }
 
     #[test]
+    fn it_compute_unitary_move() {
+        assert_eq!(unitary_move('A', '0', numeric_pos, Pos { x: 0, y: 3 }), to_set(vec!["<A"]));
+        assert_eq!(unitary_move('0', '2', numeric_pos, Pos { x: 0, y: 3 }), to_set(vec!["^A"]));
+        assert_eq!(unitary_move('9', 'A', numeric_pos, Pos { x: 0, y: 3 }), to_set(vec!["vvvA"]));
+        assert_eq!(unitary_move('2', '9', numeric_pos, Pos { x: 0, y: 3 }), to_set(vec![">^^A", "^^>A"]));
+    }
+
+    #[test]
     fn it_compute_sequence_to_numeric_key_pad() {
-        assert_eq!(sequence_to_pad(numeric_pos, Pos { x: 0, y: 3 }, vec![String::from("029A")]),
-                   vec!["<A^A>^^AvvvA", "<A^A^^>AvvvA"]);
+        assert_eq!(sequence_to_pad(numeric_pos, Pos { x: 0, y: 3 }, to_set(vec!["029A"])),
+                   to_set(vec!["<A^A>^^AvvvA", "<A^A^^>AvvvA"]));
+        assert_eq!(sequence_to_pad(directionnal_pos, Pos {x: 0, y: 0},
+                sequence_to_pad(numeric_pos, Pos { x: 0, y: 3 }, to_set(vec!["029A"]))),
+                   to_set(vec![
+                       "v<<A>>^A<A>A<AAv>A^Av<AAA^>A",
+                       "v<<A>>^A<A>AvA<^AA>Av<AAA^>A",
+                       "v<<A>>^A<A>A<AAv>A^A<vAAA>^A",
+                       "v<<A>>^A<A>A<AA>vA^Av<AAA>^A",
+                       "v<<A>>^A<A>AvA^<AA>A<vAAA>^A",
+                       "v<<A>>^A<A>AvA^<AA>A<vAAA^>A",
+                       "v<<A>>^A<A>A<AA>vA^A<vAAA>^A",
+                       "v<<A>>^A<A>A<AA>vA^A<vAAA^>A",
+                       "v<<A>>^A<A>AvA^<AA>Av<AAA>^A",
+                       "v<<A>>^A<A>A<AAv>A^A<vAAA^>A",
+                       "v<<A>>^A<A>AvA<^AA>A<vAAA^>A",
+                       "v<<A>>^A<A>AvA<^AA>A<vAAA>^A",
+                       "v<<A>>^A<A>AvA<^AA>Av<AAA>^A",
+                       "v<<A>>^A<A>AvA^<AA>Av<AAA^>A",
+                       "v<<A>>^A<A>A<AA>vA^Av<AAA^>A",
+                       "v<<A>>^A<A>A<AAv>A^Av<AAA>^A"]));
     }
 
     #[test]
@@ -206,6 +283,6 @@ mod tests {
     #[test]
     fn it_works() {
         assert_eq!(complexities(inputs::EXAMPLE), 126384);
-        assert_eq!(complexities(inputs::INPUT), 112689);
+        assert_eq!(complexities(inputs::INPUT), 107934);
     }
 }
