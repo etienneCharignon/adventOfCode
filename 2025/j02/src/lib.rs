@@ -1,17 +1,18 @@
 mod inputs;
 
-pub fn invalide(n: &str) -> bool {
+pub fn invalide(n: &str, multiple: usize) -> bool {
+    println!("{multiple}");
     let chars: Vec<_> = n.chars().collect();
-    if chars.len() % 2 != 0 {
+    if chars.len() % multiple != 0 {
         return false;
     }
-    let milieu = chars.len() / 2;
-    for i in 0..milieu {
-        if chars[i] != chars[i + milieu] {
-            return false;
-        }
-    }
-    true
+    let sections: Vec<&str> = n
+        .as_bytes()
+        .chunks(chars.len() / multiple)
+        .map(|chunk| std::str::from_utf8(chunk).unwrap())
+        .collect();
+    let premier = sections[0];
+    sections.iter().all(|s| *s == premier)
 }
 
 pub fn trouve_invalide(interval_str: &str) -> Vec<i64> {
@@ -24,8 +25,11 @@ pub fn trouve_invalide(interval_str: &str) -> Vec<i64> {
     let mut invalides: Vec<i64> = vec![];
     for i in interval[0]..=interval[1] {
         let istr = i.to_string();
-        if invalide(&istr) {
-            invalides.push(i);
+        for d in 2..=istr.len() {
+            if invalide(&istr, d) {
+                invalides.push(i);
+                break;
+            }
         }
     }
     invalides
@@ -47,13 +51,13 @@ mod tests {
     #[test]
     fn il_trouve_invalide_dans_un_interval() {
         assert_eq!(trouve_invalide("11-22"), vec![11, 22]);
-        assert_eq!(trouve_invalide("95-115"), vec![99]);
+        assert_eq!(trouve_invalide("95-115"), vec![99, 111]);
         assert_eq!(trouve_invalide("1188511880-1188511890"), vec![1188511885]);
     }
 
     #[test]
     fn il_trouve_la_somme() {
-        assert_eq!(somme(inputs::EXEMPLE), 1227775554);
-        assert_eq!(somme(inputs::INPUT), 30608905813);
+        assert_eq!(somme(inputs::EXEMPLE), 4174379265);
+        assert_eq!(somme(inputs::INPUT), 31898925685);
     }
 }
