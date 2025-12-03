@@ -17,16 +17,17 @@ pub fn trouve_invalides(interval_str: &str) -> Vec<i64> {
         .split('-')
         .map(|s| s.parse::<i64>().unwrap())
         .collect();
-    (interval[0]..=interval[1]).fold(vec![], |mut invalides, i| {
-        let istr = i.to_string();
-        for d in 2..=istr.len() {
-            if invalide(&istr, d) {
-                invalides.push(i);
-                break;
+    (interval[0]..=interval[1])
+        .filter(|i| {
+            let istr = i.to_string();
+            for d in 2..=istr.len() {
+                if invalide(&istr, d) {
+                    return true;
+                }
             }
-        }
-        invalides
-    })
+            false
+        })
+        .collect()
 }
 
 pub fn somme(inputs: &str) -> i64 {
