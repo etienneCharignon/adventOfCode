@@ -4,20 +4,18 @@ pub fn max_suivant(batteries: &[i64], taille: usize) -> i64 {
     if taille == 1 {
         return *batteries.iter().max().unwrap();
     }
-    let bs = &batteries[..batteries.len() - taille + 1];
+    let bs = &batteries[..=batteries.len() - taille];
     let max = bs.iter().max().unwrap();
     println!("{max} {bs:?} {batteries:?} {taille}");
     let position_max = batteries.iter().position(|b| *b == *max).unwrap();
-    // println!("{position_max}");
     let max_suivant = max_suivant(&batteries[position_max + 1..], taille - 1);
-    // println!("{max_suivant}");
-    println!("{max}{max_suivant}");
     format!("{max}{max_suivant}").parse().unwrap()
 }
+
 pub fn voltage_max(banc: &str) -> i64 {
     let batteries: Vec<i64> = banc
         .chars()
-        .map(|c| c.to_string().parse().unwrap())
+        .map(|c| c.to_digit(10).unwrap() as i64)
         .collect();
 
     max_suivant(&batteries, 12)
