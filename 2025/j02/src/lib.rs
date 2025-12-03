@@ -17,8 +17,7 @@ pub fn trouve_invalides(interval_str: &str) -> Vec<i64> {
         .split('-')
         .map(|s| s.parse::<i64>().unwrap())
         .collect();
-    let mut invalides: Vec<i64> = vec![];
-    for i in interval[0]..=interval[1] {
+    (interval[0]..=interval[1]).fold(vec![], |mut invalides, i| {
         let istr = i.to_string();
         for d in 2..=istr.len() {
             if invalide(&istr, d) {
@@ -26,8 +25,8 @@ pub fn trouve_invalides(interval_str: &str) -> Vec<i64> {
                 break;
             }
         }
-    }
-    invalides
+        invalides
+    })
 }
 
 pub fn somme(inputs: &str) -> i64 {
