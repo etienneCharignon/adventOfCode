@@ -1,25 +1,30 @@
 mod inputs;
 
+pub fn max_suivant(batteries: &[i64], taille: usize) -> i64 {
+    if taille == 1 {
+        return *batteries.iter().max().unwrap();
+    }
+    let bs = &batteries[..batteries.len() - taille + 1];
+    let max = bs.iter().max().unwrap();
+    println!("{max} {bs:?} {batteries:?} {taille}");
+    let position_max = batteries.iter().position(|b| *b == *max).unwrap();
+    // println!("{position_max}");
+    let max_suivant = max_suivant(&batteries[position_max + 1..], taille - 1);
+    // println!("{max_suivant}");
+    println!("{max}{max_suivant}");
+    format!("{max}{max_suivant}").parse().unwrap()
+}
 pub fn voltage_max(banc: &str) -> i64 {
     let batteries: Vec<i64> = banc
         .chars()
-        .into_iter()
         .map(|c| c.to_string().parse().unwrap())
         .collect();
 
-    println!("{batteries:?}");
-    let max = &batteries[..batteries.len() - 1].iter().max().unwrap();
-    println!("{max}");
-    let position_max = batteries.iter().position(|b| b == *max).unwrap();
-    println!("{position_max}");
-    let max_suivant = &batteries[position_max + 1..].iter().max().unwrap();
-    println!("{max_suivant}");
-    println!("{position_max}{max_suivant}");
-    format!("{max}{max_suivant}").parse().unwrap()
+    max_suivant(&batteries, 12)
 }
 
 pub fn somme_voltage(entree: &str) -> i64 {
-    entree.lines().map(|banc| voltage_max(banc)).sum::<i64>()
+    entree.lines().map(voltage_max).sum::<i64>()
 }
 
 #[cfg(test)]
@@ -28,14 +33,15 @@ mod tests {
 
     #[test]
     fn trouve_voltage_maximum() {
-        assert_eq!(voltage_max("987654321111111"), 98);
-        assert_eq!(voltage_max("811111111111119"), 89);
-        assert_eq!(voltage_max("234234234234278"), 78);
+        assert_eq!(voltage_max("234234234234278"), 434234234278);
+        assert_eq!(voltage_max("987654321111111"), 987654321111);
+        assert_eq!(voltage_max("811111111111119"), 811111111119);
+        assert_eq!(voltage_max("818181911112111"), 888911112111);
     }
 
     #[test]
     fn somme_voltage_bancs() {
-        assert_eq!(somme_voltage(inputs::EXEMPLE), 357);
-        assert_eq!(somme_voltage(inputs::INPUT), 17092);
+        assert_eq!(somme_voltage(inputs::EXEMPLE), 3121910778619);
+        assert_eq!(somme_voltage(inputs::INPUT), 170147128753455);
     }
 }
