@@ -1,7 +1,21 @@
 mod inputs;
+use std::collections::HashSet;
 
-pub fn deplacable(x: i64, y: i64, champ: &Vec<Vec<i64>>, l: i64, h: i64) -> bool {
-    if champ[y as usize][x as usize] == 0 {
+#[derive(Debug, PartialEq, Copy, Clone, Hash, Eq)]
+pub struct Pos {
+    x: i64,
+    y: i64,
+}
+
+pub fn déplacable(
+    x: i64,
+    y: i64,
+    champ: &[Vec<i64>],
+    l: i64,
+    h: i64,
+    supprimés: &HashSet<Pos>,
+) -> bool {
+    if champ[y as usize][x as usize] == 0 || supprimés.contains(&Pos { x, y }) {
         return false;
     }
     let mut nombre_rouleau = 0;
@@ -9,18 +23,16 @@ pub fn deplacable(x: i64, y: i64, champ: &Vec<Vec<i64>>, l: i64, h: i64) -> bool
         for j in -1..=1 {
             let px = x + i;
             let py = y + j;
-            if px >= 0 && py >= 0 && px < l && py < h {
+            if px >= 0 && py >= 0 && px < l && py < h && !supprimés.contains(&Pos { x: px, y: py })
+            {
                 nombre_rouleau += champ[py as usize][px as usize];
             }
         }
     }
-    if nombre_rouleau <= 4 {
-        println!("{x},{y}: {nombre_rouleau}");
-    }
     nombre_rouleau <= 4
 }
 
-pub fn compte_deplacable(entree: &str) -> u64 {
+pub fn compte_deplacable(entree: &str) -> usize {
     let champ: Vec<_> = entree
         .lines()
         .map(|l| {
@@ -32,19 +44,43 @@ pub fn compte_deplacable(entree: &str) -> u64 {
     println!("{champ:?}");
     let h = champ.len() as i64;
     let l = champ[0].len() as i64;
-    let mut compte = 0;
+    let déplacées = HashSet::<Pos>::new();
+    let mut déplacables = HashSet::<Pos>::new();
     for y in 0..h {
         for x in 0..l {
-            if deplacable(x, y, &champ, l, h) {
-                compte += 1;
+            if déplacable(x, y, &champ, l, h, &déplacées) {
+                déplacables.insert(Pos { x, y });
             }
         }
     }
-    compte
+    déplacables.len()
 }
 
-pub fn compte_supprimables(entree: &str) -> i64 {
-    0
+pub fn compte_déplacées(entree: &str) -> usize {
+    let champ: Vec<_> = entree
+        .lines()
+        .map(|l| {
+            l.chars()
+                .map(|c| if c == '@' { 1 } else { 0 })
+                .collect::<Vec<i64>>()
+        })
+        .collect();
+    let h = champ.len() as i64;
+    let l = champ[0].len() as i64;
+    let mut déplacées = HashSet::<Pos>::new();
+    let mut déplacables = HashSet::from([Pos { x: 0, y: 0 }]);
+    while !déplacables.is_empty() {
+        déplacables.clear();
+        for y in 0..h {
+            for x in 0..l {
+                if déplacable(x, y, &champ, l, h, &déplacées) {
+                    déplacables.insert(Pos { x, y });
+                }
+            }
+        }
+        déplacées.extend(&déplacables);
+    }
+    déplacées.len()
 }
 
 #[cfg(test)]
@@ -58,8 +94,8 @@ mod tests {
     }
 
     #[test]
-    fn il_compte_supprimables() {
-        assert_eq!(compte_supprimables(inputs::EXEMPLE), 43);
-        assert_eq!(compte_supprimables(inputs::INPUT), 13);
+    fn il_compte_déplacées() {
+        assert_eq!(compte_déplacées(inputs::EXEMPLE), 43);
+        assert_eq!(compte_déplacées(inputs::INPUT), 8538);
     }
 }
