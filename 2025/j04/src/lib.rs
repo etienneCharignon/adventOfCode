@@ -13,23 +13,21 @@ pub fn déplacable(
     champ: &[Vec<i64>],
     l: i64,
     h: i64,
-    supprimés: &HashSet<Pos>,
+    déplacés: &HashSet<Pos>,
 ) -> bool {
-    if champ[y as usize][x as usize] == 0 || supprimés.contains(&Pos { x, y }) {
+    if champ[y as usize][x as usize] == 0 || déplacés.contains(&Pos { x, y }) {
         return false;
     }
-    let mut nombre_rouleau = 0;
+    let mut nombre_rouleaux = 0;
     for i in -1..=1 {
         for j in -1..=1 {
-            let px = x + i;
-            let py = y + j;
-            if px >= 0 && py >= 0 && px < l && py < h && !supprimés.contains(&Pos { x: px, y: py })
-            {
-                nombre_rouleau += champ[py as usize][px as usize];
+            let p = Pos { x: x + i, y: y + j };
+            if p.x >= 0 && p.y >= 0 && p.x < l && p.y < h && !déplacés.contains(&p) {
+                nombre_rouleaux += champ[p.y as usize][p.x as usize];
             }
         }
     }
-    nombre_rouleau <= 4
+    nombre_rouleaux <= 4
 }
 
 pub fn compte_deplacable(entree: &str) -> usize {
@@ -44,11 +42,11 @@ pub fn compte_deplacable(entree: &str) -> usize {
     println!("{champ:?}");
     let h = champ.len() as i64;
     let l = champ[0].len() as i64;
-    let déplacées = HashSet::<Pos>::new();
+    let déplacés = HashSet::<Pos>::new();
     let mut déplacables = HashSet::<Pos>::new();
     for y in 0..h {
         for x in 0..l {
-            if déplacable(x, y, &champ, l, h, &déplacées) {
+            if déplacable(x, y, &champ, l, h, &déplacés) {
                 déplacables.insert(Pos { x, y });
             }
         }
@@ -56,7 +54,7 @@ pub fn compte_deplacable(entree: &str) -> usize {
     déplacables.len()
 }
 
-pub fn compte_déplacées(entree: &str) -> usize {
+pub fn compte_déplacés(entree: &str) -> usize {
     let champ: Vec<_> = entree
         .lines()
         .map(|l| {
@@ -67,20 +65,20 @@ pub fn compte_déplacées(entree: &str) -> usize {
         .collect();
     let h = champ.len() as i64;
     let l = champ[0].len() as i64;
-    let mut déplacées = HashSet::<Pos>::new();
+    let mut déplacés = HashSet::<Pos>::new();
     let mut déplacables = HashSet::from([Pos { x: 0, y: 0 }]);
     while !déplacables.is_empty() {
         déplacables.clear();
         for y in 0..h {
             for x in 0..l {
-                if déplacable(x, y, &champ, l, h, &déplacées) {
+                if déplacable(x, y, &champ, l, h, &déplacés) {
                     déplacables.insert(Pos { x, y });
                 }
             }
         }
-        déplacées.extend(&déplacables);
+        déplacés.extend(&déplacables);
     }
-    déplacées.len()
+    déplacés.len()
 }
 
 #[cfg(test)]
@@ -94,8 +92,8 @@ mod tests {
     }
 
     #[test]
-    fn il_compte_déplacées() {
-        assert_eq!(compte_déplacées(inputs::EXEMPLE), 43);
-        assert_eq!(compte_déplacées(inputs::INPUT), 8538);
+    fn il_compte_déplacés() {
+        assert_eq!(compte_déplacés(inputs::EXEMPLE), 43);
+        assert_eq!(compte_déplacés(inputs::INPUT), 8538);
     }
 }
