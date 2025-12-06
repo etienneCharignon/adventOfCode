@@ -14,7 +14,7 @@ pub fn somme_problèmes_1(cahier: &str) -> i64 {
     println!("{opérations:?}, {nombres:?}");
     let problèmes: Vec<_> = opérations
         .iter()
-        .map(|opération| if *opération == "*" { 1 } else { 0 })
+        .map(|opération| valeur_initiale(opération))
         .collect();
     nombres
         .iter()
@@ -22,11 +22,9 @@ pub fn somme_problèmes_1(cahier: &str) -> i64 {
             problèmes
                 .into_iter()
                 .enumerate()
-                .map(|(i, resultat)| {
-                    if opérations[i] == "*" {
-                        return resultat * ligne_de_nombres[i];
-                    }
-                    resultat + ligne_de_nombres[i]
+                .map(|(i, resultat)| match opérations[i] {
+                    "*" => resultat * ligne_de_nombres[i],
+                    _ => resultat + ligne_de_nombres[i],
                 })
                 .collect()
         })
@@ -34,7 +32,7 @@ pub fn somme_problèmes_1(cahier: &str) -> i64 {
         .sum()
 }
 
-pub fn resultat_initial(opération: &str) -> i64 {
+pub fn valeur_initiale(opération: &str) -> i64 {
     match opération {
         "*" => 1,
         _ => 0,
@@ -61,13 +59,13 @@ pub fn somme_problèmes_2(cahier: &str) -> i64 {
     println!("{opérations:?}, {chaines:?}");
 
     let (t, _, r) = chaines.iter().map(|s| s.trim()).fold(
-        (0, 0, resultat_initial(opérations[0])),
+        (0, 0, valeur_initiale(opérations[0])),
         |(total, index_opération, resultat), chaine| {
             if chaine.is_empty() {
                 return (
                     total + resultat,
                     index_opération + 1,
-                    resultat_initial(opérations[index_opération + 1]),
+                    valeur_initiale(opérations[index_opération + 1]),
                 );
             }
             let nombre = chaine.parse::<i64>().unwrap();
