@@ -34,6 +34,13 @@ pub fn somme_problèmes_1(cahier: &str) -> i64 {
         .sum()
 }
 
+pub fn resultat_initial(opération: &str) -> i64 {
+    match opération {
+        "*" => 1,
+        _ => 0,
+    }
+}
+
 pub fn somme_problèmes_2(cahier: &str) -> i64 {
     let lignes: Vec<_> = cahier.lines().collect();
     let opérations: Vec<_> = lignes[lignes.len() - 1].split_whitespace().collect();
@@ -53,30 +60,28 @@ pub fn somme_problèmes_2(cahier: &str) -> i64 {
         });
     println!("{opérations:?}, {chaines:?}");
 
-    let mut total = 0;
-    let mut index_opération = 0;
-    let mut resultat = match opérations[index_opération] {
-        "*" => 1,
-        _ => 0,
-    };
-    for chaine in chaines {
-        if chaine.trim() == "" {
-            index_opération += 1;
-            total += resultat;
-            resultat = match opérations[index_opération] {
-                "*" => 1,
-                _ => 0,
-            };
-            continue;
-        }
-        let nombre = chaine.trim().parse::<i64>().unwrap();
-        match opérations[index_opération] {
-            "*" => resultat *= nombre,
-            _ => resultat += nombre,
-        }
-    }
-    total += resultat;
-    total
+    let (t, _, r) = chaines.iter().map(|s| s.trim()).fold(
+        (0, 0, resultat_initial(opérations[0])),
+        |(total, index_opération, resultat), chaine| {
+            if chaine.is_empty() {
+                return (
+                    total + resultat,
+                    index_opération + 1,
+                    resultat_initial(opérations[index_opération + 1]),
+                );
+            }
+            let nombre = chaine.parse::<i64>().unwrap();
+            (
+                total,
+                index_opération,
+                match opérations[index_opération] {
+                    "*" => resultat * nombre,
+                    _ => resultat + nombre,
+                },
+            )
+        },
+    );
+    t + r
 }
 
 #[cfg(test)]
