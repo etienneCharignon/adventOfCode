@@ -42,7 +42,7 @@ pub fn valeur_initiale(opération: &str) -> i64 {
 pub fn somme_problèmes_2(cahier: &str) -> i64 {
     let lignes: Vec<_> = cahier.lines().collect();
     let opérations: Vec<_> = lignes[lignes.len() - 1].split_whitespace().collect();
-    let acc = lignes[0].chars().map(|_| String::new()).collect();
+    let acc = vec![String::new(); lignes[0].len()];
     let chaines: Vec<_> = lignes[..lignes.len() - 1]
         .iter()
         .map(|l| l.chars().collect::<Vec<_>>())
@@ -50,9 +50,8 @@ pub fn somme_problèmes_2(cahier: &str) -> i64 {
             acc.iter()
                 .enumerate()
                 .map(|(i, colonne)| {
-                    let mut nouvelle_chaine = colonne.clone();
-                    nouvelle_chaine.push(chars[i]);
-                    nouvelle_chaine
+                    let char = chars[i];
+                    format!("{colonne}{char}")
                 })
                 .collect()
         });
