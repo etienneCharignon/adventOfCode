@@ -22,7 +22,7 @@ pub fn compte_circuits(entrée: &str, max_nombre_guirlands: usize) -> usize {
         .collect();
     distances.sort_by_key(|d| d.2);
     // println!("{distances:?}");
-    let mut circuits: Vec<_> = vec![];
+    let mut circuits: Vec<HashSet<_>> = vec![];
     let mut nombre_guirlands = 0;
     for distance in distances {
         if nombre_guirlands == max_nombre_guirlands {
@@ -31,34 +31,24 @@ pub fn compte_circuits(entrée: &str, max_nombre_guirlands: usize) -> usize {
         let (b1, b2, _) = distance;
         let mut trouvés: Vec<_> = circuits
             .iter_mut()
-            .filter(|c: &&mut HashSet<&Vec<_>>| c.contains(b1) || c.contains(b2))
+            .filter(|c| c.contains(b1) || c.contains(b2))
             .collect();
         if trouvés.is_empty() {
             nombre_guirlands += 1;
             circuits.push(HashSet::from([b1, b2]));
             continue;
         }
-        if trouvés.len() == 1 {
-            let circuit = &mut trouvés[0];
-            if circuit.contains(b1) && circuit.contains(b2) {
-                //continue;
-            }
-
-            nombre_guirlands += 1;
-            circuit.insert(b1);
-            circuit.insert(b2);
-        } else {
-            let (premier, reste) = trouvés.split_at_mut(1);
-            let circuit = &mut premier[0];
+        let (circuit, reste) = trouvés.split_first_mut().unwrap();
+        if !reste.is_empty() {
             let circuit2 = &mut reste[0];
 
             circuit.extend(circuit2.iter());
             circuit2.clear();
-
-            nombre_guirlands += 1;
-            circuit.insert(b1);
-            circuit.insert(b2);
         }
+
+        nombre_guirlands += 1;
+        circuit.insert(b1);
+        circuit.insert(b2);
     }
     circuits.sort_by_key(|c| Reverse(c.len()));
     println!("{circuits:?}");
@@ -78,41 +68,29 @@ pub fn connecte_tout(entrée: &str) -> i64 {
         .filter(|distance| distance.2 > 0)
         .collect();
     distances.sort_by_key(|d| d.2);
-    let mut circuits: Vec<_> = vec![];
+    let mut circuits: Vec<HashSet<_>> = vec![];
     for distance in distances {
         let (b1, b2, _) = distance;
         let mut trouvés: Vec<_> = circuits
             .iter_mut()
-            .filter(|c: &&mut HashSet<&Vec<_>>| c.contains(b1) || c.contains(b2))
+            .filter(|c| c.contains(b1) || c.contains(b2))
             .collect();
         if trouvés.is_empty() {
             circuits.push(HashSet::from([b1, b2]));
             continue;
         }
-        if trouvés.len() == 1 {
-            let circuit = &mut trouvés[0];
-            if circuit.contains(b1) && circuit.contains(b2) {
-                //continue;
-            }
-
-            circuit.insert(b1);
-            circuit.insert(b2);
-            if circuit.len() == nombre_boites {
-                return b1[0] * b2[0];
-            }
-        } else {
-            let (premier, reste) = trouvés.split_at_mut(1);
-            let circuit = &mut premier[0];
+        let (circuit, reste) = trouvés.split_first_mut().unwrap();
+        if !reste.is_empty() {
             let circuit2 = &mut reste[0];
 
             circuit.extend(circuit2.iter());
             circuit2.clear();
+        }
 
-            circuit.insert(b1);
-            circuit.insert(b2);
-            if circuit.len() == nombre_boites {
-                return b1[0] * b2[0];
-            }
+        circuit.insert(b1);
+        circuit.insert(b2);
+        if circuit.len() == nombre_boites {
+            return b1[0] * b2[0];
         }
     }
     0
