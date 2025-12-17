@@ -1,4 +1,6 @@
-use std::i64;
+use std::collections::HashSet;
+use z3::ast::Int;
+use z3::*;
 
 mod inputs;
 
@@ -51,9 +53,9 @@ pub fn trouve_état(
         let mut nouveau_min = min;
         for bouton in boutons {
             let état = appuie(état_initial, bouton);
-            //println!("appuie {bouton:?}, {}", n + 1);
             let (retour_min, succès) = trouve_état(&état, cible, boutons, n + 1, nouveau_min);
             if succès {
+                println!("appuie {bouton:?}, {}", n + 1);
                 nouveau_min = retour_min;
                 trouvé = true;
             }
@@ -108,10 +110,10 @@ pub fn trouve_état_joltage(
         let mut nouveau_min = min;
         for bouton in boutons {
             let état = appuie_joltage(état_initial, bouton);
-            //println!("appuie {bouton:?}, {}", n + 1);
             let (retour_min, succès) =
                 trouve_état_joltage(&état, cible, boutons, n + 1, nouveau_min);
             if succès {
+                println!("appuie {bouton:?}, {}", n + 1);
                 nouveau_min = retour_min;
                 trouvé = true;
             }
@@ -127,8 +129,8 @@ pub fn compte_appuis_machine_joltage(machine: &str) -> i64 {
         .map(|b| b.trim_matches(&['(', ')'][..]))
         .map(|b| {
             b.split(",")
-                .map(|n| n.parse::<i64>().unwrap())
-                .collect::<Vec<_>>()
+                .map(|n| n.parse::<usize>().unwrap())
+                .collect::<HashSet<_>>()
         })
         .collect();
     let cible: Vec<_> = jetons[jetons.len() - 1]
@@ -137,12 +139,47 @@ pub fn compte_appuis_machine_joltage(machine: &str) -> i64 {
         .map(|n| n.parse::<i64>().unwrap())
         .collect();
     println!("Entrée : {boutons:?} {cible:?}");
+    /*
     let état_initial = vec![0; cible.len()];
     let (min, succes) = trouve_état_joltage(&état_initial, &cible, &boutons, 0, 15);
     if !succes {
         panic!("min initial issufisant.")
     }
-    min
+    min*/
+    let variables: Vec<_> = jetons[1..jetons.len() - 1]
+        .iter()
+        .map(|nom| Int::fresh_const(nom))
+        .collect();
+    let solver = Optimize::new();
+    let somme = z3::ast::Int::add(&variables);
+    solver.minimize(&somme);
+    for variable in &variables {
+        solver.assert(&variable.ge(0));
+    }
+    for (i, voltage) in cible.iter().enumerate() {
+        let variables_concernées: Vec<_> = boutons
+            .iter()
+            .enumerate()
+            .filter(|(_, b)| b.contains(&i))
+            .map(|(ib, _)| &variables[ib])
+            .collect();
+        let somme = z3::ast::Int::add(&variables_concernées);
+
+        solver.assert(&somme.eq(*voltage));
+    }
+    if solver.check(&[]) == SatResult::Sat {
+        let model = solver.get_model().unwrap();
+
+        let values: Vec<i64> = variables
+            .iter()
+            .map(|v| model.eval(v, true).unwrap().as_i64().unwrap())
+            .collect();
+        println!("Solutions: {:?}", values);
+
+        model.eval(&somme, true).unwrap().as_i64().unwrap()
+    } else {
+        panic!("pas de solution")
+    }
 }
 
 pub fn compte_appuis_joltage(entrées: &str) -> i64 {
@@ -178,8 +215,39 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "travaille sur la partie 2"]
+    fn il_compt_les_appuis_pour_les_lampes_2() {
+        assert_eq!(
+            compte_appuis_machine("[##.#] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}"),
+            2
+        );
+        assert_eq!(
+            compte_appuis_machine("[#..#] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}"),
+            2
+        );
+        assert_eq!(
+            compte_appuis_machine("[.###] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}"),
+            2
+        );
+    }
+
+    #[test]
+    fn il_compt_les_appuis_machine_joltage() {
+        assert_eq!(
+            compte_appuis_machine_joltage("[##.#] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}"),
+            10
+        );
+        assert_eq!(
+            compte_appuis_machine_joltage(
+                "[...#.] (0,2,3,4) (2,3) (0,4) (0,1,2) (1,2,3,4) {7,5,12,7,2}"
+            ),
+            12
+        );
+    }
+
+    #[test]
     fn il_compt_les_appuis_pour_joltage() {
-        // assert_eq!(compte_appuis_joltage(inputs::EXEMPLE), 33);
-        assert_eq!(compte_appuis_joltage(inputs::INPUT), 33);
+        assert_eq!(compte_appuis_joltage(inputs::EXEMPLE), 33);
+        assert_eq!(compte_appuis_joltage(inputs::INPUT), 21021);
     }
 }
